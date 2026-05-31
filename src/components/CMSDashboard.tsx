@@ -3411,76 +3411,76 @@ export default function CMSDashboard() {
                   const overallGraduates = kaderisasiData.reduce((sum, r) => sum + r.pesertaLulus, 0);
 
                   return (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       {/* CARD 1: PKD */}
-                      <div className="bg-white border border-emerald-100 p-5 rounded-[28px] flex items-center justify-between gap-4 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/30 hover:shadow-md group shadow-[0_8px_30px_rgb(0,0,0,0.02)] text-left">
-                        <div className="flex items-center gap-4">
+                      <div className="bg-white border border-emerald-500/10 p-5 sm:p-6 rounded-[24px] flex items-center justify-between gap-4 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/30 hover:shadow-md group shadow-[0_8px_30px_rgb(0,0,0,0.02)] text-left min-w-0">
+                        <div className="flex items-center gap-4 min-w-0">
                           <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-[#e6fcf0] border border-emerald-100 flex items-center justify-center text-[#006b54] shadow-xs">
                             <GraduationCap className="w-7 h-7 text-[#006b54]" />
                           </div>
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-800 font-display">Total PKD Lulus</h4>
-                            <p className="text-[11px] text-[#006b54] font-extrabold uppercase tracking-wide font-sans mt-0.5 whitespace-nowrap">Pelatihan Dasar</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5 font-sans">Kabupaten Bogor</p>
+                          <div className="min-w-0">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-800 font-display">Total PKD Lulus</h4>
+                            <p className="text-xs sm:text-sm text-[#006b54] font-extrabold uppercase tracking-wide font-sans mt-0.5 whitespace-nowrap">PELATIHAN DASAR</p>
+                            <p className="text-[10px] sm:text-xs text-slate-400 mt-1 font-sans">Kabupaten Bogor</p>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <span className="text-3xl font-extrabold text-[#f43f5e] font-mono tracking-tight block leading-none">{totalPkdGraduates}</span>
-                          <span className="text-[9px] font-bold text-[#006b54] uppercase font-sans tracking-wider block mt-1">Kader</span>
+                        <div className="flex flex-col items-center justify-center flex-shrink-0 ml-auto pl-4 border-l border-slate-100 min-w-[72px]">
+                          <span className="text-3xl sm:text-4xl font-extrabold text-[#f43f5e] font-sans tracking-tight block leading-none">{totalPkdGraduates}</span>
+                          <span className="text-[10px] sm:text-xs font-bold text-[#006b54] uppercase font-sans tracking-wider block mt-1.5 leading-none">KADER</span>
                         </div>
                       </div>
 
                       {/* CARD 2: DIKLATSAR */}
-                      <div className="bg-white border border-amber-50 p-5 rounded-[28px] flex items-center justify-between gap-4 transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/30 hover:shadow-md group shadow-[0_8px_30px_rgb(0,0,0,0.02)] text-left">
-                        <div className="flex items-center gap-4">
+                      <div className="bg-white border border-amber-500/10 p-5 sm:p-6 rounded-[24px] flex items-center justify-between gap-4 transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/30 hover:shadow-md group shadow-[0_8px_30px_rgb(0,0,0,0.02)] text-left min-w-0">
+                        <div className="flex items-center gap-4 min-w-0">
                           <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-amber-50/65 border border-amber-100 flex items-center justify-center text-amber-700 shadow-xs">
                             <Shield className="w-7 h-7 text-amber-600" />
                           </div>
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-800 font-display">Total DIKLATSAR</h4>
-                            <p className="text-[11px] text-[#006b54] font-extrabold uppercase tracking-wide font-sans mt-0.5 whitespace-nowrap">Pendidikan Banser</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5 font-sans">Kabupaten Bogor</p>
+                          <div className="min-w-0">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-800 font-display">Total DIKLATSAR</h4>
+                            <p className="text-xs sm:text-sm text-[#006b54] font-extrabold uppercase tracking-wide font-sans mt-0.5 whitespace-nowrap">PENDIDIKAN BANSER</p>
+                            <p className="text-[10px] sm:text-xs text-slate-400 mt-1 font-sans">Kabupaten Bogor</p>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <span className="text-3xl font-extrabold text-[#f43f5e] font-mono tracking-tight block leading-none">{totalDiklatsarGraduates}</span>
-                          <span className="text-[9px] font-bold text-[#006b54] uppercase font-sans tracking-wider block mt-1">Banser</span>
+                        <div className="flex flex-col items-center justify-center flex-shrink-0 ml-auto pl-4 border-l border-slate-100 min-w-[72px]">
+                          <span className="text-3xl sm:text-4xl font-extrabold text-[#f43f5e] font-sans tracking-tight block leading-none">{totalDiklatsarGraduates}</span>
+                          <span className="text-[10px] sm:text-xs font-bold text-[#006b54] uppercase font-sans tracking-wider block mt-1.5 leading-none">BANSER</span>
                         </div>
                       </div>
 
                       {/* CARD 3: PKL & SUSBALAN */}
-                      <div className="bg-white border border-emerald-100 p-5 rounded-[28px] flex items-center justify-between gap-4 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/30 hover:shadow-md group shadow-[0_8px_30px_rgb(0,0,0,0.02)] text-left">
-                        <div className="flex items-center gap-4">
+                      <div className="bg-white border border-emerald-500/10 p-5 sm:p-6 rounded-[24px] flex items-center justify-between gap-4 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/30 hover:shadow-md group shadow-[0_8px_30px_rgb(0,0,0,0.02)] text-left min-w-0">
+                        <div className="flex items-center gap-4 min-w-0">
                           <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-[#e6fcf0] border border-emerald-100 flex items-center justify-center text-emerald-700 shadow-xs">
                             <Award className="w-7 h-7 text-[#006b54]" />
                           </div>
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-800 font-display">PKL & SUSBALAN</h4>
-                            <p className="text-[11px] text-[#006b54] font-extrabold uppercase tracking-wide font-sans mt-0.5 whitespace-nowrap">Kursus Senior</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5 font-sans">Kabupaten Bogor</p>
+                          <div className="min-w-0">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-800 font-display">PKL & SUSBALAN</h4>
+                            <p className="text-xs sm:text-sm text-[#006b54] font-extrabold uppercase tracking-wide font-sans mt-0.5 whitespace-nowrap">KURSUS SENIOR</p>
+                            <p className="text-[10px] sm:text-xs text-slate-400 mt-1 font-sans">Kabupaten Bogor</p>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <span className="text-3xl font-extrabold text-[#f43f5e] font-mono tracking-tight block leading-none">{totalPklGraduates}</span>
-                          <span className="text-[9px] font-bold text-[#006b54] uppercase font-sans tracking-wider block mt-1">Kader</span>
+                        <div className="flex flex-col items-center justify-center flex-shrink-0 ml-auto pl-4 border-l border-slate-100 min-w-[72px]">
+                          <span className="text-3xl sm:text-4xl font-extrabold text-[#f43f5e] font-sans tracking-tight block leading-none">{totalPklGraduates}</span>
+                          <span className="text-[10px] sm:text-xs font-bold text-[#006b54] uppercase font-sans tracking-wider block mt-1.5 leading-none">KADER</span>
                         </div>
                       </div>
 
                       {/* CARD 4: TOTAL ALUMNI */}
-                      <div className="bg-white border border-emerald-100 p-5 rounded-[28px] flex items-center justify-between gap-4 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/30 hover:shadow-md group shadow-[0_8px_30px_rgb(0,0,0,0.02)] text-left">
-                        <div className="flex items-center gap-4">
+                      <div className="bg-white border border-emerald-500/10 p-5 sm:p-6 rounded-[24px] flex items-center justify-between gap-4 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-500/30 hover:shadow-md group shadow-[0_8px_30px_rgb(0,0,0,0.02)] text-left min-w-0">
+                        <div className="flex items-center gap-4 min-w-0">
                           <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-[#e6fcf0] border border-emerald-100 flex items-center justify-center text-emerald-800 shadow-xs">
                             <Users className="w-7 h-7 text-[#006b54]" />
                           </div>
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-800 font-display">Total Alumni</h4>
-                            <p className="text-[11px] text-[#006b54] font-extrabold uppercase tracking-wide font-sans mt-0.5 whitespace-nowrap">Semua Jenjang</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5 font-sans">Kabupaten Bogor</p>
+                          <div className="min-w-0">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-800 font-display">Total Alumni</h4>
+                            <p className="text-xs sm:text-sm text-[#006b54] font-extrabold uppercase tracking-wide font-sans mt-0.5 whitespace-nowrap">SEMUA JENJANG</p>
+                            <p className="text-[10px] sm:text-xs text-slate-400 mt-1 font-sans">Kabupaten Bogor</p>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <span className="text-3xl font-extrabold text-[#f43f5e] font-mono tracking-tight block leading-none">{overallGraduates}</span>
-                          <span className="text-[9px] font-bold text-[#006b54] uppercase font-sans tracking-wider block mt-1">Anggota</span>
+                        <div className="flex flex-col items-center justify-center flex-shrink-0 ml-auto pl-4 border-l border-slate-100 min-w-[72px]">
+                          <span className="text-3xl sm:text-4xl font-extrabold text-[#f43f5e] font-sans tracking-tight block leading-none">{overallGraduates}</span>
+                          <span className="text-[10px] sm:text-xs font-bold text-[#006b54] uppercase font-sans tracking-wider block mt-1.5 leading-none">ANGGOTA</span>
                         </div>
                       </div>
                     </div>
