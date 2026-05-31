@@ -1,0 +1,149 @@
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Reusable small 5-point star template centered at 0,0 -->
+    <g id="ansor-star-symbol">
+      <polygon
+        points="0,-2.5 0.7,-0.7 2.5,-0.7 1,-0.2 1.5,1.5 0,0.5 -1.5,1.5 -1,-0.2 -2.5,-0.7 -0.7,-0.7"
+        fill="#ffffff"
+      />
+    </g>
+    <!-- Reusable green star symbol -->
+    <g id="green-star-symbol">
+      <polygon
+        points="0,-6 1.7,-1.7 6,-1.7 2.4,-0.5 3.6,3.6 0,1.2 -3.6,3.6 -2.4,-0.5 -6,-1.7 -1.7,-1.7"
+        fill="#0b6623"
+      />
+    </g>
+
+    <!-- Path for "GERAKAN PEMUDA ANSOR" (top outer arch) -->
+    <path id="top-outer-path" d="M 52,250 A 198,198 0 0,1 448,250" fill="none" />
+
+    <!-- Path for "KABUPATEN BOGOR" (top inner arch) -->
+    <path id="top-inner-path" d="M 96,250 A 154,154 0 0,1 404,250" fill="none" />
+
+    <!-- Path for bottom ribbon text "MEDIA ANSOR BOGOR ONLINE" (reads left to right, right side up, counter-clockwise) -->
+    <path id="bottom-ribbon-path" d="M 75,250 A 175,175 0 0,0 425,250" fill="none" />
+  </defs>
+
+  <!-- Base circular background (White fill, thick forest green outer border) -->
+  <circle cx="250" cy="250" r="236" fill="#ffffff" stroke="#0b6623" stroke-width="12" />
+
+  <!-- Thin inner green accent rings -->
+  <circle cx="250" cy="250" r="218" fill="none" stroke="#0b6623" stroke-width="2.5" />
+  <circle cx="250" cy="250" r="142" fill="none" stroke="#0b6623" stroke-width="2.5" />
+
+  <!-- ================= BOTTOM GREEN WINGS & RIBBON ================= -->
+  <!-- Left shoulder rises up to y ~ 160, right shoulder rises to y ~ 160, and arches around bottom outer edge of r=236 and inner edge of r=142 -->
+  <path 
+    d="M 23,250 
+       C 23,170 42,155 58,185 
+       A 202,202 0 0,0 442,185 
+       C 458,155 477,170 477,250 
+       A 228,228 0 0,1 23,250 Z" 
+    fill="#0b6623" 
+    stroke="#074517" 
+    stroke-width="3" 
+  />
+
+  <!-- Subtle gold line detailing inside the green ribbon boundaries to make it look premium -->
+  <path 
+    d="M 50,210 A 202,202 0 0,0 450,210" 
+    fill="none" 
+    stroke="#d4af37" 
+    stroke-width="1.5" 
+    opacity="0.5" 
+  />
+
+  <!-- Decorative separating stars on left and right wings -->
+  <g transform="translate(48, 226)">
+    <circle cx="0" cy="0" r="10" fill="#ffffff" stroke="#074517" stroke-width="1" />
+    <use href="#green-star-symbol" transform="scale(1.1)" />
+  </g>
+  <g transform="translate(452, 226)">
+    <circle cx="0" cy="0" r="10" fill="#ffffff" stroke="#074517" stroke-width="1" />
+    <use href="#green-star-symbol" transform="scale(1.1)" />
+  </g>
+
+  <!-- ================= ARCHED TYPOGRAPHY ================= -->
+  <!-- Top Outer Text: GERAKAN PEMUDA ANSOR -->
+  <text font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#042a0b" letter-spacing="1.5">
+    <textPath href="#top-outer-path" startOffset="50%" text-anchor="middle">
+      GERAKAN PEMUDA ANSOR
+    </textPath>
+  </text>
+
+  <!-- Top Inner Text: KABUPATEN BOGOR -->
+  <text font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800" fill="#042a0b" letter-spacing="1">
+    <textPath href="#top-inner-path" startOffset="50%" text-anchor="middle">
+      KABUPATEN BOGOR
+    </textPath>
+  </text>
+
+  <!-- Bottom Ribbon Text: MEDIA ANSOR BOGOR ONLINE -->
+  <text font-family="system-ui, -apple-system, sans-serif" font-size="21" font-weight="900" fill="#ffffff" letter-spacing="1">
+    <textPath href="#bottom-ribbon-path" startOffset="50%" text-anchor="middle">
+      MEDIA ANSOR BOGOR ONLINE
+    </textPath>
+  </text>
+
+
+  <!-- ================= CENTRAL OFFICIAL ANSOR TRIANGLE ================= -->
+  <g transform="translate(150, 126) scale(2.0)">
+    {/* Inner Green Triangle Content Body from official AnsorLogo */}
+    <polygon points="50,2 98,90 2,90" fill="#00a852" />
+
+    {/* Double White Border Treatment */}
+    <polygon points="50,5 95,87 5,87" fill="none" stroke="#ffffff" stroke-width="2.2" />
+    <polygon points="50,9 91,84 9,84" fill="none" stroke="#ffffff" stroke-width="0.8" />
+
+    <polygon points="50,10 90,83 10,83" fill="#00a852" />
+
+    {/* Upper Sunlight Burst / Torch Radiations fanning UPWARDS */}
+    <polygon points="49.5,35 50,15 50.5,35" fill="#ffffff" />
+    <polygon points="49,35.5 42,22 49.8,34.5" fill="#ffffff" />
+    <polygon points="48,36.5 35,31 49,35.5" fill="#ffffff" />
+    <polygon points="51,35.5 58,22 50.2,34.5" fill="#ffffff" />
+    <polygon points="52,36.5 65,31 51,35.5" fill="#ffffff" />
+
+    {/* Lower rays fanning DOWNWARDS */}
+    <polygon points="49.7,46 50,57 50.3,46" fill="#ffffff" />
+    <polygon points="49.3,46 44,53 49.6,45.5" fill="#ffffff" />
+    <polygon points="50.7,46 56,53 50.4,45.5" fill="#ffffff" />
+
+    {/* Crescent Moon pointing upwards */}
+    <path
+      d="M 33,52 C 33,64 43,68 50,68 C 57,68 67,64 67,52 C 63.5,58 57.5,61 50,61 C 42.5,61 36.5,58 33,52 Z"
+      fill="#ffffff"
+    />
+
+    {/* The 1 Central Large Star */}
+    <g transform="translate(50, 41) scale(1.8)">
+      <use href="#ansor-star-symbol" />
+    </g>
+
+    {/* The 8 surrounding stars (4 left, 4 right) */}
+    <use href="#ansor-star-symbol" x="38" y="44" />
+    <use href="#ansor-star-symbol" x="34" y="51" />
+    <use href="#ansor-star-symbol" x="34" y="59" />
+    <use href="#ansor-star-symbol" x="41" y="66" />
+
+    <use href="#ansor-star-symbol" x="62" y="44" />
+    <use href="#ansor-star-symbol" x="66" y="51" />
+    <use href="#ansor-star-symbol" x="66" y="59" />
+    <use href="#ansor-star-symbol" x="59" y="66" />
+
+    {/* "ANSOR" Wordmark */}
+    <text
+      x="50"
+      y="80"
+      text-anchor="middle"
+      fill="#ffffff"
+      font-size="13"
+      font-weight="bold"
+      font-family="system-ui, -apple-system, Arial, sans-serif"
+      letter-spacing="0.8"
+    >
+      ANSOR
+    </text>
+  </g>
+</svg>
