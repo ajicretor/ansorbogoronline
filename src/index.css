@@ -1,0 +1,256 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", var(--font-sans);
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-ansor-dark: #010603;
+  --color-ansor-green: #028243;
+  --color-ansor-mid: #059669;
+  --color-ansor-light: #10b981;
+  --color-ansor-lime: #00ff88;
+  --color-ansor-gold: #10b981;
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased text-slate-800 bg-white selection:bg-emerald-100 selection:text-emerald-800;
+  }
+}
+
+/* Custom smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08) !important;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
+}
+
+/* CMS Light Theme Overrides - Custom Emerald Green Theme Matching GP Ansor Identity */
+
+/* Main workspace styling overrides */
+.cms-main-workspace {
+  background: transparent !important;
+}
+
+/* Headings text override from text-white to elegant Deep Emerald Dark */
+.cms-main-workspace h2,
+.cms-main-workspace h3,
+.cms-main-workspace h4,
+.cms-main-workspace h5,
+.cms-main-workspace h6,
+.cms-main-workspace .text-white,
+.cms-main-workspace .text-emerald-50,
+.cms-main-workspace .text-slate-100 {
+  color: #022c22 !important; /* text-emerald-950 */
+}
+
+/* Secondary descriptions from neutral-400 to elegant readable Emerald Green */
+.cms-main-workspace .text-neutral-400,
+.cms-main-workspace .text-slate-400,
+.cms-main-workspace .text-slate-500,
+.cms-main-workspace .text-emerald-300,
+.cms-main-workspace .text-emerald-300\/60,
+.cms-main-workspace p[class*="text-neutral-"],
+.cms-main-workspace p[class*="text-slate-"],
+.cms-main-workspace p[class*="text-emerald-"] {
+  color: #047857 !important; /* text-emerald-700 */
+}
+
+/* Minor labels to crisp Emerald format */
+.cms-main-workspace label,
+.cms-main-workspace .text-emerald-300,
+.cms-main-workspace .text-neutral-300,
+.cms-main-workspace [class*="text-emerald-300"],
+.cms-main-workspace [class*="text-neutral-350"] {
+  color: #065f46 !important; /* text-emerald-800 */
+  font-weight: 600 !important;
+}
+
+/* Master Ansor Gold text highlight formatting */
+.cms-main-workspace .text-ansor-gold {
+  color: #059669 !important; /* elegant emerald highlight */
+  font-weight: bold !important;
+}
+
+/* Glassmorphism Panel Boxes, Form wrappers, and Dashboard Cards */
+.cms-main-workspace form,
+.cms-main-workspace .bg-white\/\[0\.02\],
+.cms-main-workspace div[class*="bg-white/["],
+.cms-main-workspace div[class*="bg-[#011406]"],
+.cms-main-workspace div[class*="bg-[#021408]"],
+.cms-main-workspace div[class*="bg-[#031d0b]"],
+.cms-main-workspace div[class*="bg-white/5"],
+.cms-main-workspace div[class*="bg-black/"],
+.cms-main-workspace div[class*="bg-emerald-950"],
+.cms-main-workspace div[class*="bg-emerald-900"],
+.cms-main-workspace div[class*="bg-[#020d04]"],
+.cms-main-workspace div[class*="bg-[#04220c]"] {
+  background-color: #f0fdf4 !important; /* Soft light-green background like customization menu */
+  background-image: none !important; /* Stripping any dark background gradient-images! */
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important; /* emerald borders */
+  box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.05), 0 2px 8px -1px rgba(16, 185, 129, 0.03) !important;
+  color: #022c22 !important;
+}
+
+/* Deep input text to clear white with emerald outline */
+.cms-main-workspace input,
+.cms-main-workspace textarea,
+.cms-main-workspace select {
+  background-color: #ffffff !important;
+  border: 1px solid #10b981 !important; /* emerald-500 */
+  color: #022c22 !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: inset 0 1px 2px rgba(16, 185, 129, 0.02) !important;
+}
+
+.cms-main-workspace input:focus,
+.cms-main-workspace textarea:focus,
+.cms-main-workspace select:focus {
+  background-color: #ffffff !important;
+  border-color: #059669 !important; /* emerald-600 */
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), inset 0 1px 2px rgba(16, 185, 129, 0.02) !important;
+}
+
+.cms-main-workspace input::placeholder,
+.cms-main-workspace textarea::placeholder {
+  color: #059669 !important;
+  opacity: 0.5 !important;
+}
+
+/* Secondary list containers & tables list items (e.g., programs, leaders cards) */
+.cms-main-workspace div[class*="hover:border-white/"],
+.cms-main-workspace div[class*="border-white/5"] {
+  background-color: #f0fdf4 !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.cms-main-workspace div[class*="hover:border-white/"]:hover {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.06) !important;
+  transform: translateY(-1px);
+}
+
+/* Secondary action buttons to elegant light-emerald buttons */
+.cms-main-workspace button,
+.cms-main-workspace label[class*="bg-"],
+.cms-main-workspace label[class*="cursor-pointer"],
+.cms-main-workspace button[class*="bg-neutral-800"],
+.cms-main-workspace button[class*="bg-white/5"],
+.cms-main-workspace button[class*="bg-black/"],
+.cms-main-workspace button[class*="bg-emerald-950"],
+.cms-main-workspace button[class*="bg-emerald-900"],
+.cms-main-workspace button[class*="bg-[#0"] {
+  background-color: #10b981 !important; /* bright emerald buttons */
+  background-image: none !important;
+  border: 1px solid #059669 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.05) !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.cms-main-workspace button:hover,
+.cms-main-workspace label[class*="bg-"]:hover,
+.cms-main-workspace label[class*="cursor-pointer"]:hover,
+.cms-main-workspace button[class*="bg-neutral-800"]:hover,
+.cms-main-workspace button[class*="bg-white/5"]:hover,
+.cms-main-workspace button[class*="bg-black/"]:hover,
+.cms-main-workspace button[class*="bg-emerald-950"]:hover,
+.cms-main-workspace button[class*="bg-emerald-900"]:hover,
+.cms-main-workspace button[class*="bg-[#0"]:hover {
+  background-color: #059669 !important; /* hover to deeper emerald */
+  color: #ffffff !important;
+}
+
+/* Explicit rule for active (AKTIF) vs inactive (MATI) widgets or subcards */
+.cms-main-workspace .bg-red-950\/5,
+.cms-main-workspace div[class*="bg-red-950/"],
+.cms-main-workspace button[class*="bg-red-950"],
+.cms-main-workspace button[class*="bg-red-600"],
+.cms-main-workspace button[class*="bg-red-500"],
+.cms-main-workspace button[class*="bg-red-"] {
+  background-color: #fef2f2 !important; /* soft red bg for clarity instead of gray/dark */
+  border-color: #fca5a5 !important;
+  color: #991b1b !important;
+}
+
+.cms-main-workspace button[class*="bg-red-950"]:hover,
+.cms-main-workspace button[class*="bg-red-600"]:hover,
+.cms-main-workspace button[class*="bg-red-"]:hover {
+  background-color: #fee2e2 !important;
+}
+
+/* Explicit rule for edit/ubah icon action tags */
+.cms-main-workspace button[class*="bg-emerald-950/40"] {
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+  border-color: #059669 !important;
+}
+.cms-main-workspace button[class*="bg-emerald-950/40"]:hover {
+  background-color: #059669 !important;
+}
+
+/* Toggle role buttons & tabs configurations styling with soft emerald tint */
+.cms-main-workspace button[class*="hover:bg-white/5"] {
+  background-color: #f0fdf4 !important; /* soft emerald bg */
+  color: #065f46 !important; /* emerald text */
+  border-color: #a7f3d0 !important; /* light emerald border */
+}
+
+.cms-main-workspace button[class*="text-neutral-400"] {
+  color: #059669 !important; /* emerald-600 */
+}
+
+/* Grid & sub-headers border adjustments to soft emerald lines */
+.cms-main-workspace div {
+  border-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Stat trend tags values color */
+.cms-main-workspace .text-neutral-300 {
+  color: #065f46 !important;
+}
+
+.cms-main-workspace p {
+  color: #047857 !important;
+}
+
+/* Analytics & charts text fix for lighter charts overlay */
+.recharts-text {
+  fill: #065f46 !important;
+}
+
+/* Custom Modal Animation keyframes */
+@keyframes bounceSimple {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+

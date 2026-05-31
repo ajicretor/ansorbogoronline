@@ -1,0 +1,6 @@
+{
+  "name": "GP Ansor Kabupaten Bogor",
+  "description": "Website Resmi Pimpinan Cabang Gerakan Pemuda Ansor Kabupaten Bogor. Berkhidmat, Bersatu, Berdaya.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
