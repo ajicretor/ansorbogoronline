@@ -953,7 +953,7 @@ export default function CMSDashboard() {
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
                   className="w-full bg-white/60 border border-emerald-200 text-slate-900 placeholder-slate-400 rounded-xl pl-10 pr-4 py-3 text-xs tracking-wide focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
-                  placeholder="admin / sekretariat"
+                  placeholder="silahkan login sahabat"
                 />
               </div>
             </div>
