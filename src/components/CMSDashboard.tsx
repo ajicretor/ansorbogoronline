@@ -2716,73 +2716,6 @@ export default function CMSDashboard() {
 
                 <div className="grid grid-cols-1 gap-5">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">File Gambar Banner / URL Gambar</label>
-                    <div className="flex flex-col gap-2">
-                      <input
-                        type="text"
-                        required={adsForm.enabled && !adsForm.scriptCode?.trim()}
-                        value={adsForm.imageUrl || ""}
-                        onChange={e => setAdsForm({ ...adsForm, imageUrl: e.target.value })}
-                        className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono"
-                        placeholder="Masukkan URL foto atau unggah langsung di bawah..."
-                      />
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          id="ads-image-upload"
-                          className="hidden"
-                          onChange={e => handleImageUploadHelper(e, (base64) => setAdsForm({ ...adsForm, imageUrl: base64 }))}
-                        />
-                        <label
-                          htmlFor="ads-image-upload"
-                          className="px-3.5 py-1.5 bg-emerald-950/40 hover:bg-[#042f1a] border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5"
-                        >
-                          <ImageIcon className="w-3.5 h-3.5" />
-                          Unggah Gambar Iklan
-                        </label>
-                        {adsForm.imageUrl && (
-                          <button
-                            type="button"
-                            onClick={() => setAdsForm({ ...adsForm, imageUrl: "" })}
-                            className="px-2.5 py-1.5 bg-red-950/20 hover:bg-red-900/30 border border-red-500/20 text-red-400 rounded-lg text-xs font-semibold transition-all"
-                          >
-                            Hapus Gambar
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {adsForm.imageUrl && adsForm.imageUrl.startsWith("data:") && (
-                      <p className="text-[10px] text-emerald-400 font-mono">✓ Gambar terunggah (data Base64 penyimpan lokal)</p>
-                    )}
-                    <p className="text-[9px] text-neutral-400">Rekomendasi dimensi horizontal 970 x 150 px (rasio 6.47:1) agar terlihat sangat presisi dan proporsional.</p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">Tautan Tujuan Klik (Target Link URL)</label>
-                    <input
-                      type="text"
-                      required={adsForm.enabled && !adsForm.scriptCode?.trim()}
-                      value={adsForm.targetUrl}
-                      onChange={e => setAdsForm({ ...adsForm, targetUrl: e.target.value })}
-                      className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono"
-                      placeholder="Contoh: https://wa.me/628123456789 atau https://instagram.com/ansorkabogor"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">Teks Alternatif (Alt Text / Judul)</label>
-                    <input
-                      type="text"
-                      required={adsForm.enabled && !adsForm.scriptCode?.trim()}
-                      value={adsForm.altText || ""}
-                      onChange={e => setAdsForm({ ...adsForm, altText: e.target.value })}
-                      className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white"
-                      placeholder="Contoh: Promo Kemitraan PC GP Ansor Kabupaten Bogor"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
                     <label className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
                       <span>Kode Script Iklan / Embed Kode &lt;script&gt; iklan (Adsterra / AdSense / dll)</span>
                     </label>
@@ -2803,7 +2736,7 @@ export default function CMSDashboard() {
 <script src="https://www.highperformanceformat.com/096cc74077f90b93992bcd2333aff399/invoke.js"></script>`}
                     />
                     <p className="text-[9.5px] text-amber-200/60 leading-relaxed">
-                      💡 **Catatan Penting**: Jika Anda menempelkan kode `&lt;script&gt;` di atas, website utama akan merender banner iklan hasil script tersebut (seperti iframe ad network 728x90 px) secara aman. Ini akan diprioritaskan sebelum file gambar biasa.
+                      💡 **Catatan Penting**: Tempelkan kode `&lt;script&gt;` di atas, website utama akan merender banner iklan hasil script tersebut (seperti iframe ad network 728x90 px) secara aman.
                     </p>
                   </div>
                 </div>
