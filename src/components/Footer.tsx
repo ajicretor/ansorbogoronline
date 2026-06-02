@@ -53,34 +53,34 @@ export default function Footer() {
                 href={contactConfig.instagram || "https://instagram.com"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-slate-900/30 hover:bg-emerald-600 hover:text-white transition-colors flex items-center justify-center border border-slate-800"
+                className="w-8 h-8 rounded-full bg-slate-900/30 hover:bg-emerald-600 hover:text-white transition-colors flex items-center justify-center border border-slate-800 group"
                 aria-label="Instagram Page"
               >
-                <Instagram className="w-3.5 h-3.5 text-slate-400" />
+                <Instagram className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-colors" />
               </a>
               <a
                 href={contactConfig.facebook || "https://facebook.com"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-slate-900/30 hover:bg-emerald-600 hover:text-white transition-colors flex items-center justify-center border border-slate-800"
+                className="w-8 h-8 rounded-full bg-slate-900/30 hover:bg-emerald-600 hover:text-white transition-colors flex items-center justify-center border border-slate-800 group"
                 aria-label="Facebook Page"
               >
-                <Facebook className="w-3.5 h-3.5 text-slate-400" />
+                <Facebook className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-colors" />
               </a>
               <a
                 href={contactConfig.youtube || "https://youtube.com"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-slate-900/30 hover:bg-emerald-600 hover:text-white transition-colors flex items-center justify-center border border-slate-800"
+                className="w-8 h-8 rounded-full bg-slate-900/30 hover:bg-emerald-600 hover:text-white transition-colors flex items-center justify-center border border-slate-800 group"
                 aria-label="Youtube Channel"
               >
-                <Youtube className="w-3.5 h-3.5 text-slate-400" />
+                <Youtube className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-colors" />
               </a>
               <a
                 href={contactConfig.tiktok || "https://tiktok.com"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-slate-900/30 hover:bg-emerald-600 hover:text-white transition-colors flex items-center justify-center border border-slate-800"
+                className="w-8 h-8 rounded-full bg-slate-900/30 hover:bg-emerald-600 hover:text-white transition-colors flex items-center justify-center border border-slate-800 group"
                 aria-label="TikTok Page"
               >
                 <svg
@@ -96,10 +96,10 @@ export default function Footer() {
               <button
                 type="button"
                 onClick={() => setIsCmsOpen(true)}
-                className="w-8 h-8 rounded-full bg-[#1e9fe9] hover:bg-[#34acf1] text-white transition-all active:scale-95 flex items-center justify-center cursor-pointer shadow-md shadow-sky-500/10 border border-sky-400/20"
+                className="w-8 h-8 rounded-full bg-slate-900/30 hover:bg-[#1e9fe9] hover:border-[#1e9fe9] hover:text-white hover:shadow-md hover:shadow-sky-500/10 transition-all duration-300 active:scale-95 flex items-center justify-center cursor-pointer border border-slate-800 group"
                 title="Kontrol CMS / Admin Panel"
               >
-                <Bot className="w-5 h-5 text-white" />
+                <Bot className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors duration-300" />
               </button>
             </div>
           </div>

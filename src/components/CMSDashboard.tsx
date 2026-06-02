@@ -4,7 +4,7 @@ import {
   X, Save, RotateCcw, Plus, Trash2, Edit2, Check, Database, Upload,
   FileText, LayoutGrid, Users, Image as ImageIcon, HelpCircle, ArrowLeft, Eye, MessageSquare, Sparkles,
   MapPin, Phone, Mail, Globe, Laptop, Lightbulb, GraduationCap, Heart, Star, Compass, BookOpen,
-  Activity, TrendingUp, Sliders, Smartphone, QrCode, UserCheck, Lock, User, LogOut, Shield, Award, Copy, Terminal, Share2
+  Activity, TrendingUp, Sliders, Smartphone, QrCode, UserCheck, Lock, User, LogOut, Shield, Award, Copy, Terminal, Share2, ShieldCheck
 } from "lucide-react";
 import AnsorLogo from "./AnsorLogo";
 import { supabase } from "../lib/supabase";
@@ -143,15 +143,47 @@ export default function CMSDashboard() {
   const [isSqlExpanded, setIsSqlExpanded] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
 
-  // Safeguard tab permissions for sekretariat
+  // Dynamic role permissions configured by Super Admin
+  const [rolePermissions, setRolePermissions] = useState<Record<"sekretariat" | "ketuacabang", TabType[]>>(() => {
+    try {
+      const persisted = localStorage.getItem("ansor_cms_role_permissions");
+      if (persisted) {
+        const parsed = JSON.parse(persisted);
+        if (parsed.sekretariat && !parsed.sekretariat.includes("analytics")) {
+          parsed.sekretariat.push("analytics");
+        }
+        if (parsed.ketuacabang && !parsed.ketuacabang.includes("analytics")) {
+          parsed.ketuacabang.push("analytics");
+        }
+        return parsed;
+      }
+    } catch (e) {
+      console.error("Error loading role permissions:", e);
+    }
+    return {
+      sekretariat: ["news", "gallery", "analytics"],
+      ketuacabang: ["news", "gallery", "analytics"]
+    };
+  });
+
+  // Automatically save permissions when edited
+  useEffect(() => {
+    localStorage.setItem("ansor_cms_role_permissions", JSON.stringify(rolePermissions));
+  }, [rolePermissions]);
+
+  // Safeguard tab permissions dynamically
   useEffect(() => {
     if (currentUser && currentUser.role !== "superadmin") {
-      const allowed: TabType[] = ["programs", "news", "gallery"];
+      const role = currentUser.role;
+      const allowed = rolePermissions[role] || [];
       if (!allowed.includes(activeTab)) {
-        setActiveTab("programs");
+        const fallback = allowed.length > 0 ? allowed[0] : null;
+        if (fallback) {
+          setActiveTab(fallback);
+        }
       }
     }
-  }, [currentUser, activeTab]);
+  }, [currentUser, activeTab, rolePermissions]);
 
   // Selection states for editing/creating items
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -1074,7 +1106,7 @@ export default function CMSDashboard() {
               { key: "general" as const, label: "Branding & Hero", icon: Sparkles, alwaysActive: true },
               { key: "about" as const, label: "Tentang & Pilar", icon: Compass },
               { key: "programs" as const, label: "Program Kerja", icon: LayoutGrid },
-              { key: "news" as const, label: "Kabar & Syi'ar", icon: FileText },
+              { key: "news" as const, label: "Berita (News)", icon: FileText },
               { key: "gallery" as const, label: "Galeri Kegiatan", icon: ImageIcon },
               { key: "leaders" as const, label: "Dewan Pimpinan", icon: Users },
               { key: "contact" as const, label: "Kontak & Footer", icon: MapPin },
@@ -1086,7 +1118,9 @@ export default function CMSDashboard() {
               const isEnabled = tabItem.alwaysActive || menuStatus[tabItem.key];
               const isSelected = activeTab === tabItem.key;
               
-              const isTabPermitted = isSuperAdmin || tabItem.key === "programs" || tabItem.key === "news" || tabItem.key === "gallery";
+              const isTabPermitted = isSuperAdmin || (currentUser && rolePermissions[currentUser.role]?.includes(tabItem.key));
+              
+              if (!isTabPermitted) return null;
               
               return (
                 <div key={tabItem.key} className="relative group/nav">
@@ -1224,7 +1258,7 @@ export default function CMSDashboard() {
                   {[
                     { key: "about" as const, name: "Tentang & Pilar", desc: "Profile GP Ansor Bogor" },
                     { key: "programs" as const, name: "Program Utama", desc: "Sektor darmabakti kerja" },
-                    { key: "news" as const, name: "Kabar & Syi'ar", desc: "Artikel & Berita rilis" },
+                    { key: "news" as const, name: "Berita (News)", desc: "Artikel & Berita rilis" },
                     { key: "gallery" as const, name: "Galeri Kegiatan", desc: "Potret dokumentasi PC" },
                     { key: "leaders" as const, name: "Dewan Pimpinan", desc: "Struktur Organisasi" },
                     { key: "contact" as const, name: "Kontak & Footer", desc: "Saluran alamat fisik" },
@@ -1935,13 +1969,13 @@ export default function CMSDashboard() {
             </div>
           )}
 
-          {/* TAB 4: KABAR & SYI'AR KEGIATAN */}
+          {/* TAB 4: BERITA & KEGIATAN */}
           {activeTab === "news" && (
             <div className="max-w-5xl space-y-6 text-left">
-              {renderDisabledSeksiWarning("news", "Kabar & Syi'ar")}
+              {renderDisabledSeksiWarning("news", "Berita (News)")}
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold font-display text-white">Kelola Kabar & Kegiatan Terbaru</h2>
+                  <h2 className="text-xl font-bold font-display text-white">Kelola Berita & Kegiatan Terbaru</h2>
                   <p className="text-neutral-400 text-xs mt-1">Kelola publikasi naskah berita, pengkaderan dan kegiatan sosial GP Ansor Kabupaten Bogor.</p>
                 </div>
                 {!editingId && !isCreating && (
@@ -1951,7 +1985,7 @@ export default function CMSDashboard() {
                     className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
                   >
                     <Plus className="w-4 h-4" />
-                    Tambah Kabar
+                    Buat Berita (News)
                   </button>
                 )}
               </div>
@@ -4145,6 +4179,143 @@ export default function CMSDashboard() {
                     </table>
                   </div>
                 )}
+              </div>
+
+              {/* OTORITAS SUPER ADMIN: MANAJEMEN HAK AKSES MENU */}
+              <div className="bg-white rounded-[24px] p-6 border border-slate-200 shadow-md space-y-6 text-slate-800 text-left font-sans">
+                <div className="space-y-1 border-b border-slate-100 pb-4">
+                  <h4 className="text-base font-extrabold text-[#022A12] flex items-center gap-2 font-display uppercase tracking-wide">
+                    <ShieldCheck className="w-5.5 h-5.5 text-emerald-600" />
+                    Manajemen Otoritas Akses Menu (Super Admin Only)
+                  </h4>
+                  <p className="text-slate-500 text-xs">
+                    Atur secara dinamis menu/tab mana saja di panel admin ini yang diaktifkan bagi peran <strong>Ketua</strong> dan <strong>Sekretaris (Sekretariat)</strong>.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* ROLE: KETUA CABANG */}
+                  <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center gap-2 border-b border-slate-200 pb-2.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                      <h5 className="font-extrabold text-xs uppercase tracking-wider text-slate-700">Peran: Ketua Cabang (ketuacabang)</h5>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-800">
+                      {[
+                        { key: "general" as const, label: "Branding & Hero" },
+                        { key: "about" as const, label: "Tentang & Pilar" },
+                        { key: "programs" as const, label: "Program Kerja" },
+                        { key: "news" as const, label: "Berita (News)" },
+                        { key: "gallery" as const, label: "Galeri Kegiatan" },
+                        { key: "leaders" as const, label: "Dewan Pimpinan" },
+                        { key: "contact" as const, label: "Kontak & Footer" },
+                        { key: "services" as const, label: "Layanan Digital" },
+                        { key: "analytics" as const, label: "Monitor Pembaca" },
+                        { key: "users" as const, label: "Label Navigasi" },
+                      ].map((menuItem) => {
+                        const isAllowed = rolePermissions.ketuacabang.includes(menuItem.key);
+                        return (
+                          <label key={menuItem.key} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white border border-transparent hover:border-slate-200/50 transition-all cursor-pointer text-xs select-none font-medium">
+                            <input
+                              type="checkbox"
+                              checked={isAllowed}
+                              onChange={() => {
+                                const current = [...rolePermissions.ketuacabang];
+                                let updated: TabType[];
+                                if (current.includes(menuItem.key)) {
+                                  updated = current.filter(t => t !== menuItem.key);
+                                } else {
+                                  updated = [...current, menuItem.key];
+                                }
+                                setRolePermissions({
+                                  ...rolePermissions,
+                                  ketuacabang: updated
+                                });
+                                triggerToast("Hak akses Ketua Cabang berhasil diperbarui!");
+                              }}
+                              className="accent-emerald-700 rounded cursor-pointer w-4 h-4 shrink-0"
+                            />
+                            <span className={isAllowed ? "text-slate-900 font-bold" : "text-slate-400 font-normal"}>
+                              {menuItem.label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* ROLE: SEKRETARIAT CABANG */}
+                  <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center gap-2 border-b border-slate-200 pb-2.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
+                      <h5 className="font-extrabold text-xs uppercase tracking-wider text-slate-700">Peran: Sekretaris (sekretariat)</h5>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-800">
+                      {[
+                        { key: "general" as const, label: "Branding & Hero" },
+                        { key: "about" as const, label: "Tentang & Pilar" },
+                        { key: "programs" as const, label: "Program Kerja" },
+                        { key: "news" as const, label: "Berita (News)" },
+                        { key: "gallery" as const, label: "Galeri Kegiatan" },
+                        { key: "leaders" as const, label: "Dewan Pimpinan" },
+                        { key: "contact" as const, label: "Kontak & Footer" },
+                        { key: "services" as const, label: "Layanan Digital" },
+                        { key: "analytics" as const, label: "Monitor Pembaca" },
+                        { key: "users" as const, label: "Label Navigasi" },
+                      ].map((menuItem) => {
+                        const isAllowed = rolePermissions.sekretariat.includes(menuItem.key);
+                        return (
+                          <label key={menuItem.key} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white border border-transparent hover:border-slate-200/50 transition-all cursor-pointer text-xs select-none font-medium">
+                            <input
+                              type="checkbox"
+                              checked={isAllowed}
+                              onChange={() => {
+                                const current = [...rolePermissions.sekretariat];
+                                let updated: TabType[];
+                                if (current.includes(menuItem.key)) {
+                                  updated = current.filter(t => t !== menuItem.key);
+                                } else {
+                                  updated = [...current, menuItem.key];
+                                }
+                                setRolePermissions({
+                                  ...rolePermissions,
+                                  sekretariat: updated
+                                });
+                                triggerToast("Hak akses Sekretaris Cabang berhasil diperbarui!");
+                              }}
+                              className="accent-indigo-700 rounded cursor-pointer w-4 h-4 shrink-0"
+                            />
+                            <span className={isAllowed ? "text-slate-900 font-bold" : "text-slate-400 font-normal"}>
+                              {menuItem.label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* RECOVERY BUTTON */}
+                <div className="flex justify-end pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm("Apakah Anda yakin ingin menyetel ulang hak akses kedua peran ini ke pengaturan awal? (Berdasarkan instruksi, akses terbatas secara standar memiliki menu Kabar Syi'ar, Galeri Kegiatan, dan Monitor Pembaca)")) {
+                        setRolePermissions({
+                          sekretariat: ["news", "gallery", "analytics"],
+                          ketuacabang: ["news", "gallery", "analytics"]
+                        });
+                        triggerToast("Hak akses berhasil di-reset ke peraturan standar!");
+                      }
+                    }}
+                    className="px-4 py-2 bg-slate-150 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-300 text-xs font-bold rounded-xl transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Reset Hak Akses Standar (Kabar, Galeri, & Monitor)
+                  </button>
+                </div>
               </div>
 
               {/* MODAL INPUT/EDIT PENGGUNA BARU */}
