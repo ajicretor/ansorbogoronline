@@ -2723,17 +2723,7 @@ export default function CMSDashboard() {
                       value={adsForm.scriptCode || ""}
                       onChange={e => setAdsForm({ ...adsForm, scriptCode: e.target.value })}
                       className="w-full bg-[#010903] border border-amber-500/20 rounded-xl px-4 py-2.5 text-xs text-amber-200 font-mono focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all h-36"
-                      placeholder={`<!-- Tempel kode script di sini, contoh: -->
-<script>
-  atOptions = {
-    'key' : '096cc74077f90b93992bcd2333aff399',
-    'format' : 'iframe',
-    'height' : 90,
-    'width' : 728,
-    'params' : {}
-  };
-</script>
-<script src="https://www.highperformanceformat.com/096cc74077f90b93992bcd2333aff399/invoke.js"></script>`}
+                      placeholder="Tempel kode <script> iklan Anda disini..."
                     />
                     <p className="text-[9.5px] text-amber-200/60 leading-relaxed">
                       💡 **Catatan Penting**: Tempelkan kode `&lt;script&gt;` di atas, website utama akan merender banner iklan hasil script tersebut (seperti iframe ad network 728x90 px) secara aman.
