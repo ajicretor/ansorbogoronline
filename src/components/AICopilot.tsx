@@ -48,7 +48,7 @@ export default function AICopilot() {
     const defaultMsg: Message = {
       id: "welcome",
       role: "model",
-      content: "Assalamu'alaikum wr. wb. Sahabat! Korps asisten pintar **Copilot AI Ansor** siap memandu Anda.\n\nSaya bertugas sebagai **CS Digital** untuk menjawab segala pertanyaan Anda mengenai cara penggunaan *Digital Suite & CMS Control Panel* ini.\n\nButuh bantuan apa hari ini? Silakan klik salah satu topik cepat di bawah atau tulis langsung pertanyaan Anda!"
+      content: "Assalamu'alaikum we. wb, Sahabat !, saya asisten pintar ansor siap memandu anda.  \n\nsaya bertugas sebagai CS Digital untuk menjawab segala pertanyan anda.\nButuh bantuan apa hari ini ? silahkan tulis langsung pertanyaan anda !"
     };
     setMessages([defaultMsg]);
   };
@@ -336,36 +336,42 @@ export default function AICopilot() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* PRESETS AND QUICK INPUT FIELD */}
+             {/* PRESETS AND QUICK INPUT FIELD */}
             <div className={`p-3.5 border-t ${
               theme === "dark" ? "border-emerald-800/40 bg-[#011205]" : "border-emerald-100 bg-emerald-50/20"
             }`}>
               
-              {/* Suggestion pills */}
-              {messages.length <= 1 && !isLoading && (
-                <div className="mb-3 space-y-1.5">
-                  <p className="text-[9px] uppercase font-bold tracking-wider text-slate-400 dark:text-emerald-500/60 text-left font-mono mb-1 flex items-center gap-1.5">
-                    <HelpCircle className="w-3 h-3" /> Rekomendasi Pertanyaan:
-                  </p>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {PRESET_QUESTIONS.map((pq, idx) => (
+              {/* Dynamic Clue Detection - matches when user types keywords related to cms / admin panel / login */}
+              {(() => {
+                const lowerInput = inputValue.toLowerCase();
+                const hasCmsClue = ["cms", "admin", "panel", "login", "masuk", "akun", "password", "sandi", "username"].some(clue => lowerInput.includes(clue));
+                
+                if (hasCmsClue && !isLoading) {
+                  return (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 8 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      className="mb-3 flex justify-start"
+                    >
                       <button
-                        key={idx}
                         type="button"
-                        onClick={() => handlePresetClick(pq.q)}
-                        className={`text-[9.5px] p-2 text-left rounded-xl transition-all border font-semibold flex items-center justify-between hover:scale-102 active:scale-95 cursor-pointer ${
+                        onClick={() => {
+                          handleSendMessage("Bagaimana cara masuk ke CMS Portal dan apa username/password bawaannya?");
+                        }}
+                        className={`text-[10px] px-3 py-2.5 rounded-xl transition-all border flex items-center gap-1.5 hover:scale-101 active:scale-95 cursor-pointer font-bold ${
                           theme === "dark" 
-                            ? "bg-emerald-950/40 border-emerald-800/40 hover:bg-emerald-950/80 text-emerald-400" 
-                            : "bg-white border-emerald-50/70 hover:bg-emerald-50/30 hover:border-emerald-200/50 text-emerald-800 shadow-2xs"
+                            ? "bg-amber-950/40 border-amber-500/30 text-amber-300 hover:border-amber-400/50 hover:bg-amber-900/60" 
+                            : "bg-amber-50/90 border-amber-200 text-amber-800 hover:bg-amber-100/85 shadow-xs"
                         }`}
                       >
-                        <span className="truncate mr-1">{pq.text}</span>
-                        <ArrowUpRight className="w-2.5 h-2.5/20 opacity-60 flex-shrink-0" />
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                        <span>Saran CS: Tampilkan Info Akun Demo & Login CMS</span>
                       </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </motion.div>
+                  );
+                }
+                return null;
+              })()}
 
               {/* Chat form field */}
               <form

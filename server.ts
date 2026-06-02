@@ -200,10 +200,36 @@ Berikut adalah pemandu fiturnya:
 Gunakan salam hangat sahabat pemuda Ansor ("Halo Sahabat!", "Assalamu'alaikum wr. wb. Sahabat!") dalam bahasa Indonesia yang penuh kesantunan, berwibawa, bersemangat organisasi pemuda Islam (Nahdlatul Ulama), serta berikan panduan ringkas dan jelas.`;
 
       // Structure chat messages complying with @google/genai contents pattern
-      const contents = messages.map((m: any) => ({
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: m.content || "" }]
-      }));
+      // Ensure the message history strictly starts with a "user" message and alternates to prevent Gemini 400 bad request error.
+      const firstUserIndex = messages.findIndex((m: any) => m.role === "user");
+      let contents: any[] = [];
+      
+      if (firstUserIndex !== -1) {
+        const apiMessages = messages.slice(firstUserIndex);
+        let expectedRole = "user";
+        
+        for (const m of apiMessages) {
+          const role = m.role === "user" ? "user" : "model";
+          if (role === expectedRole) {
+            contents.push({
+              role: role,
+              parts: [{ text: m.content || "" }]
+            });
+            expectedRole = expectedRole === "user" ? "model" : "user";
+          } else if (contents.length > 0) {
+            // Append content if roles are consecutive of the same type to preserve context
+            contents[contents.length - 1].parts[0].text += "\n" + (m.content || "");
+          }
+        }
+      }
+
+      // Fallback if no user message found in history
+      if (contents.length === 0) {
+        return res.json({
+          success: true,
+          text: "Halo Sahabat! Ada yang bisa saya bantu hari ini mengenai panduan PC GP Ansor Kabupaten Bogor Digital Suite?"
+        });
+      }
 
       const response = await ai.models.generateContent({
         model: "gemini-3.5-flash",
