@@ -164,7 +164,8 @@ const defaultAdsConfig: AdsConfig = {
   enabled: true,
   imageUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1080&auto=format&fit=crop",
   targetUrl: "https://instagram.com/ansorbogoronline/",
-  altText: "Ayo Gabung Pengkaderan Sahabat Ansor Banser Bogor"
+  altText: "Ayo Gabung Pengkaderan Sahabat Ansor Banser Bogor",
+  scriptCode: ""
 };
 
 const defaultMenuStatus: MenuStatus = {

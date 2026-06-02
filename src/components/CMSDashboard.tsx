@@ -2720,7 +2720,7 @@ export default function CMSDashboard() {
                     <div className="flex flex-col gap-2">
                       <input
                         type="text"
-                        required={adsForm.enabled}
+                        required={adsForm.enabled && !adsForm.scriptCode?.trim()}
                         value={adsForm.imageUrl || ""}
                         onChange={e => setAdsForm({ ...adsForm, imageUrl: e.target.value })}
                         className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono"
@@ -2762,7 +2762,7 @@ export default function CMSDashboard() {
                     <label className="text-xs font-semibold text-neutral-300">Tautan Tujuan Klik (Target Link URL)</label>
                     <input
                       type="text"
-                      required={adsForm.enabled}
+                      required={adsForm.enabled && !adsForm.scriptCode?.trim()}
                       value={adsForm.targetUrl}
                       onChange={e => setAdsForm({ ...adsForm, targetUrl: e.target.value })}
                       className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono"
@@ -2774,12 +2774,37 @@ export default function CMSDashboard() {
                     <label className="text-xs font-semibold text-neutral-300">Teks Alternatif (Alt Text / Judul)</label>
                     <input
                       type="text"
-                      required={adsForm.enabled}
+                      required={adsForm.enabled && !adsForm.scriptCode?.trim()}
                       value={adsForm.altText || ""}
                       onChange={e => setAdsForm({ ...adsForm, altText: e.target.value })}
                       className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white"
                       placeholder="Contoh: Promo Kemitraan PC GP Ansor Kabupaten Bogor"
                     />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                      <span>Kode Script Iklan / Embed Kode &lt;script&gt; iklan (Adsterra / AdSense / dll)</span>
+                    </label>
+                    <textarea
+                      value={adsForm.scriptCode || ""}
+                      onChange={e => setAdsForm({ ...adsForm, scriptCode: e.target.value })}
+                      className="w-full bg-[#010903] border border-amber-500/20 rounded-xl px-4 py-2.5 text-xs text-amber-200 font-mono focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all h-36"
+                      placeholder={`<!-- Tempel kode script di sini, contoh: -->
+<script>
+  atOptions = {
+    'key' : '096cc74077f90b93992bcd2333aff399',
+    'format' : 'iframe',
+    'height' : 90,
+    'width' : 728,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/096cc74077f90b93992bcd2333aff399/invoke.js"></script>`}
+                    />
+                    <p className="text-[9.5px] text-amber-200/60 leading-relaxed">
+                      💡 **Catatan Penting**: Jika Anda menempelkan kode `&lt;script&gt;` di atas, website utama akan merender banner iklan hasil script tersebut (seperti iframe ad network 728x90 px) secara aman. Ini akan diprioritaskan sebelum file gambar biasa.
+                    </p>
                   </div>
                 </div>
 

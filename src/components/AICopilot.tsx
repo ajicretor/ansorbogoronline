@@ -248,12 +248,12 @@ export default function AICopilot() {
             }`}>
               
               <div className="text-center pb-2 border-b border-dashed border-slate-200/60 dark:border-emerald-900/40">
-                <span className={`text-[9px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-full ${
+                <span className={`text-[10px] normal-case font-bold tracking-wide px-2.5 py-1 rounded-full ${
                   theme === "dark" 
                     ? "bg-emerald-950/30 text-emerald-400 border border-emerald-900/30" 
                     : "bg-emerald-50 text-emerald-700 border border-emerald-100"
                 }`}>
-                  Asisten Penggunaan CMS & Web
+                  asisten digital website ansorbogoronline.or.id
                 </span>
                 <p className="text-[9px] text-slate-400 dark:text-emerald-500/60 mt-1.5 font-mono">
                   Solusi digital kaderisasi PC GP Ansor Bogor

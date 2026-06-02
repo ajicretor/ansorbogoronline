@@ -148,6 +148,7 @@ export interface AdsConfig {
   imageUrl: string;
   targetUrl: string;
   altText: string;
+  scriptCode?: string;
 }
 
 

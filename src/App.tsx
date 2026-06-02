@@ -71,12 +71,7 @@ function MainAppContent() {
   };
 
   if (isCmsOpen) {
-    return (
-      <>
-        <CMSDashboard />
-        <AICopilot />
-      </>
-    );
+    return <CMSDashboard />;
   }
 
   return (
