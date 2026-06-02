@@ -15,6 +15,7 @@ import { ProgramItem, NewsArticle } from "./types";
 import { CMSProvider, useCMS } from "./context/CMSContext";
 import CMSDashboard from "./components/CMSDashboard";
 import DigitalServices from "./components/DigitalServices";
+import AICopilot from "./components/AICopilot";
 
 function MainAppContent() {
   // Modal states
@@ -26,7 +27,7 @@ function MainAppContent() {
   // Back to Top button visibility
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const { isCmsOpen, menuStatus } = useCMS();
+  const { isCmsOpen, menuStatus, theme } = useCMS();
 
   useEffect(() => {
     // Listen to custom cross-modal redirection events
@@ -70,11 +71,20 @@ function MainAppContent() {
   };
 
   if (isCmsOpen) {
-    return <CMSDashboard />;
+    return (
+      <>
+        <CMSDashboard />
+        <AICopilot />
+      </>
+    );
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-[#FFFFFF] via-[#FDFDFD] to-[#F7FAF8] text-slate-800 flex flex-col justify-between overflow-x-hidden selection:bg-emerald-100 selection:text-emerald-800">
+    <div className={`relative min-h-screen flex flex-col justify-between overflow-x-hidden transition-all duration-500 selection:bg-emerald-100 selection:text-emerald-800 ${
+      theme === "dark"
+        ? "bg-[#010a04] text-emerald-100/90 dark"
+        : "bg-gradient-to-b from-[#FFFFFF] via-[#FDFDFD] to-[#F7FAF8] text-slate-800"
+    }`}>
       
       {/* Soft colorful background blobs matching the reference design layout */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
@@ -156,13 +166,17 @@ function MainAppContent() {
         <button
           type="button"
           onClick={handleScrollToTop}
-          className="fixed bottom-6 right-6 z-35 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white w-10 h-10 rounded-full shadow-2xl border border-emerald-500/20 flex items-center justify-center transition-all duration-300 hover:scale-105 hover:translate-y-[-2px] cursor-pointer"
+          className="fixed bottom-24 right-6 z-35 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white w-10 h-10 rounded-full shadow-2xl border border-emerald-500/20 flex items-center justify-center transition-all duration-300 hover:scale-105 hover:translate-y-[-2px] cursor-pointer pointer-events-auto"
           title="Kembali ke Atas"
           aria-label="Scroll to top"
         >
           <ArrowUp className="w-4 h-4 scroll-smooth" />
         </button>
       )}
+
+      {/* AI COPILOT CHATBOT FOR CS ASSISTANCE */}
+      <AICopilot />
+
 
     </div>
   );

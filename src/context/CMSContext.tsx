@@ -69,6 +69,8 @@ interface CMSContextType {
   publishAllToSupabase: () => Promise<{ success: boolean; message: string }>;
   isCmsOpen: boolean;
   setIsCmsOpen: (open: boolean) => void;
+  theme: "light" | "dark";
+  toggleTheme: () => void;
 }
 
 
@@ -360,6 +362,26 @@ const CMSContext = createContext<CMSContextType | undefined>(undefined);
 
 export function CMSProvider({ children }: { children: React.ReactNode }) {
   const [isCmsOpen, setIsCmsOpen] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    return (localStorage.getItem("ansor_theme") as "light" | "dark") || "light";
+  });
+
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === "light" ? "dark" : "light";
+      localStorage.setItem("ansor_theme", next);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
+
   const [heroConfig, setHeroConfigState] = useState<HeroConfig>(defaultHeroConfig);
   const [aboutConfig, setAboutConfigState] = useState<AboutConfig>(defaultAboutConfig);
   const [strategicPillars, setStrategicPillarsState] = useState<StrategicPillar[]>(defaultStrategicPillars);
@@ -768,6 +790,8 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         publishAllToSupabase,
         isCmsOpen,
         setIsCmsOpen,
+        theme,
+        toggleTheme,
       }}
     >
       {children}

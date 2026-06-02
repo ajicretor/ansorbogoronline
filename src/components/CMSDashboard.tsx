@@ -4,7 +4,8 @@ import {
   X, Save, RotateCcw, Plus, Trash2, Edit2, Check, Database, Upload,
   FileText, LayoutGrid, Users, Image as ImageIcon, HelpCircle, ArrowLeft, Eye, MessageSquare, Sparkles,
   MapPin, Phone, Mail, Globe, Laptop, Lightbulb, GraduationCap, Heart, Star, Compass, BookOpen,
-  Activity, TrendingUp, Sliders, Smartphone, QrCode, UserCheck, Lock, User, LogOut, Shield, Award, Copy, Terminal, Share2, ShieldCheck
+  Activity, TrendingUp, Sliders, Smartphone, QrCode, UserCheck, Lock, User, LogOut, Shield, Award, Copy, Terminal, Share2, ShieldCheck,
+  Sun, Moon
 } from "lucide-react";
 import AnsorLogo from "./AnsorLogo";
 import { supabase } from "../lib/supabase";
@@ -33,7 +34,9 @@ export default function CMSDashboard() {
     kaderisasiData, setKaderisasiData,
     resetToDefault,
     publishAllToSupabase,
-    setIsCmsOpen
+    setIsCmsOpen,
+    theme,
+    toggleTheme
   } = useCMS();
 
   // --- LOGIN & AUTHENTICATION STATES ---
@@ -1011,18 +1014,26 @@ export default function CMSDashboard() {
   const isSuperAdmin = currentUser?.role === "superadmin";
 
   return (
-    <div className="min-h-screen bg-[#f0fdf4] text-slate-800 flex flex-col font-sans relative overflow-hidden">
+    <div className={`min-h-screen flex flex-col font-sans relative overflow-hidden transition-all duration-300 ${
+      theme === 'dark'
+        ? 'bg-[#010a04] text-[#ecfdf5] dark'
+        : 'bg-[#f0fdf4] text-slate-800'
+    }`}>
       
       {/* Soft gorgeous pastel blur blobs matching the beautiful design mockup (like Alterra & Al Flow) */}
-      <div className="absolute top-[-10%] right-[-10%] w-[55rem] h-[55rem] rounded-full bg-emerald-100/30 blur-[130px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[55rem] h-[55rem] rounded-full bg-teal-100/40 blur-[140px] pointer-events-none" />
+      <div className={`absolute top-[-10%] right-[-10%] w-[55rem] h-[55rem] rounded-full blur-[130px] pointer-events-none transition-all duration-300 ${
+        theme === 'dark' ? 'bg-emerald-950/20' : 'bg-emerald-100/30'
+      }`} />
+      <div className={`absolute bottom-[-10%] left-[-10%] w-[55rem] h-[55rem] rounded-full blur-[140px] pointer-events-none transition-all duration-300 ${
+        theme === 'dark' ? 'bg-amber-950/10' : 'bg-teal-100/40'
+      }`} />
 
       {/* Toast Alert pop-up */}
       {alertMsg && (
         <div className={`fixed top-5 right-5 z-[100] px-5 py-3 rounded-xl border shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-0 ${
           alertMsg.type === "success" 
-            ? "bg-white border-emerald-200 text-emerald-800"
-            : "bg-white border-red-200 text-red-800"
+            ? theme === "dark" ? "bg-[#011406] border-emerald-800 text-emerald-100" : "bg-white border-emerald-200 text-emerald-800"
+            : theme === "dark" ? "bg-[#180202] border-red-800 text-red-105" : "bg-white border-red-200 text-red-800"
         }`}>
           <div className={`w-2 h-2 rounded-full ${alertMsg.type === "success" ? "bg-emerald-500" : "bg-red-500"}`} />
           <span className="text-sm font-semibold">{alertMsg.text}</span>
@@ -1030,16 +1041,20 @@ export default function CMSDashboard() {
       )}
 
       {/* DASHBOARD NAVBAR HEADER */}
-      <header className="border-b border-emerald-200/70 bg-white/80 backdrop-blur-md px-6 py-4 sticky top-0 z-40 flex items-center justify-between shadow-xs relative">
+      <header className={`border-b px-6 py-4 sticky top-0 z-40 flex items-center justify-between shadow-xs relative transition-all duration-300 ${
+        theme === 'dark'
+          ? 'border-emerald-950/60 bg-[#011406]/90'
+          : 'border-emerald-200/70 bg-white/80 backdrop-blur-md'
+      }`}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 flex-shrink-0">
             <AnsorLogo className="w-full h-full filter drop-shadow-[0_2px_6px_rgba(16,185,129,0.15)]" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-slate-900 flex items-center gap-2 tracking-wide font-display">
-              CMS KONTEN <span className="text-[10px] bg-emerald-100/70 text-emerald-800 px-2.2 py-0.5 rounded-full border border-emerald-200 font-bold uppercase">ADMIN PANEL</span>
+            <h1 className={`text-base font-bold flex items-center gap-2 tracking-wide font-display transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              CMS KONTEN <span className={`text-[10px] px-2.2 py-0.5 rounded-full border font-bold uppercase transition-all ${theme === 'dark' ? 'bg-emerald-950/50 text-emerald-300 border-emerald-800/40' : 'bg-emerald-100/70 text-emerald-800 border-emerald-200'}`}>ADMIN PANEL</span>
             </h1>
-            <p className="text-[10px] text-slate-500 font-mono">GP Ansor PC Kabupaten Bogor Digital Suite</p>
+            <p className={`text-[10px] font-mono transition-colors ${theme === 'dark' ? 'text-emerald-500/80' : 'text-slate-500'}`}>GP Ansor PC Kabupaten Bogor Digital Suite</p>
           </div>
         </div>
 
@@ -1064,6 +1079,25 @@ export default function CMSDashboard() {
           >
             <Eye className="w-3.5 h-3.5" />
             Landing Page
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="px-3 py-1.5 rounded-lg border border-emerald-200/80 bg-emerald-50/70 dark:border-emerald-800/40 dark:bg-emerald-955/40 text-emerald-850 hover:text-emerald-950 dark:text-emerald-100 hover:bg-emerald-100 text-xs flex items-center gap-1.5 transition-colors cursor-pointer font-semibold"
+            title="Ganti Tema Tampilan (Gelap/Terang)"
+          >
+            {theme === "dark" ? (
+              <>
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                <span>Light Mode</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-3.5 h-3.5 text-slate-500" />
+                <span>Dark Mode</span>
+              </>
+            )}
           </button>
 
           {/* User Status and Logout Section */}
@@ -1098,9 +1132,13 @@ export default function CMSDashboard() {
       <div className="flex flex-grow flex-col md:flex-row overflow-hidden relative z-10">
         
         {/* SIDE BAR NAVIGATION - 7 CUSTOM MODULES MATCHING LANDING PAGE */}
-        <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-emerald-200/80 bg-[#f0fdf4]/50 backdrop-blur-md p-4 flex flex-col justify-between shadow-xs">
+        <aside className={`w-full md:w-64 border-b md:border-b-0 md:border-r p-4 flex flex-col justify-between shadow-xs transition-colors duration-300 ${
+          theme === 'dark'
+            ? 'border-emerald-950/60 bg-[#011406]/90'
+            : 'border-emerald-200/80 bg-[#f0fdf4]/50 backdrop-blur-md'
+        }`}>
           <div className="space-y-1.5 select-none">
-            <p className="text-[10px] uppercase font-mono tracking-widest text-[#0f766e] font-extrabold px-2 mb-2">Menu Kelola Konten</p>
+            <p className={`text-[10px] uppercase font-mono tracking-widest font-extrabold px-2 mb-2 transition-colors ${theme === 'dark' ? 'text-emerald-400' : 'text-[#0f766e]'}`}>Menu Kelola Konten</p>
             
             {[
               { key: "general" as const, label: "Branding & Hero", icon: Sparkles, alwaysActive: true },
@@ -1132,14 +1170,24 @@ export default function CMSDashboard() {
                     }}
                     className={`w-full text-left pl-3.5 pr-11 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all ${
                       isSelected 
-                        ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 text-emerald-800 shadow-sm font-bold scale-[1.01]" 
+                        ? theme === 'dark'
+                          ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/25 border border-emerald-500/30 text-emerald-300 shadow-sm font-bold scale-[1.01]"
+                          : "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 text-emerald-800 shadow-sm font-bold scale-[1.01]" 
                         : isTabPermitted
-                          ? "text-emerald-850 hover:text-emerald-950 hover:bg-emerald-100/60 border border-transparent cursor-pointer"
+                          ? theme === 'dark'
+                            ? "text-emerald-100/75 hover:text-white hover:bg-emerald-950/40 border border-transparent cursor-pointer"
+                            : "text-emerald-850 hover:text-emerald-955 hover:bg-emerald-100/60 border border-transparent cursor-pointer"
                           : "text-slate-350 border border-transparent cursor-not-allowed opacity-[0.3]"
                     }`}
                     title={!isTabPermitted ? "Akses Terbatas: Hanya Super Admin" : ""}
                   >
-                    <TabIcon className={`w-4 h-4 ${isSelected ? "text-emerald-600" : isTabPermitted ? "text-emerald-500/60 font-medium" : "text-emerald-300"}`} />
+                    <TabIcon className={`w-4 h-4 ${
+                      isSelected 
+                        ? "text-emerald-500" 
+                        : isTabPermitted 
+                          ? theme === 'dark' ? "text-emerald-400/80" : "text-emerald-500/60 font-medium" 
+                          : "text-emerald-300"
+                    }`} />
                     <span className="truncate">{tabItem.label}</span>
                   </button>
                   
@@ -1184,7 +1232,7 @@ export default function CMSDashboard() {
         </aside>
 
         {/* WORKSPACE AREA */}
-        <main className="cms-main-workspace flex-grow p-6 md:p-8 overflow-y-auto max-h-[calc(100vh-73px)] relative z-10">
+        <main className={`${theme === 'light' ? 'cms-main-workspace' : ''} flex-grow p-6 md:p-8 overflow-y-auto max-h-[calc(100vh-73px)] relative z-10`}>
           
           {/* TAB 1: HERO CONFIG & IMPACT STATS */}
           {activeTab === "general" && (

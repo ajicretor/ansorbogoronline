@@ -254,3 +254,145 @@ html {
   }
 }
 
+
+/* ==========================================================================
+   GP ANSOR CABUPATEN BOGOR: PREMIUM DYNAMIC DARK THEME DESIGNS
+   ========================================================================== */
+
+/* Overwrite extreme texts to bright high-contrast color tones */
+.dark .text-emerald-950,
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-zinc-900,
+.dark .text-neutral-900,
+.dark h2:not([class*="text-"]):not([class*="font-mono"]),
+.dark h3:not([class*="text-"]):not([class*="font-mono"]) {
+  color: #f8fafc !important; /* bright light green-white close to off-white */
+}
+
+.dark .text-slate-705,
+.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-neutral-700,
+.dark .text-neutral-600,
+.dark .text-zinc-700,
+.dark .text-zinc-600 {
+  color: #a7f3d0 !important; /* emerald-200 for extremely readable copy */
+}
+
+.dark .text-emerald-900,
+.dark .text-emerald-800,
+.dark .text-slate-800 {
+  color: #ecfdf5 !important;
+}
+
+.dark .text-slate-500,
+.dark .text-neutral-500,
+.dark .text-zinc-500 {
+  color: #34d399 !important; /* emerald-400 */
+}
+
+/* Background mappings */
+.dark .bg-white {
+  background-color: #011406 !important; /* very clean dark shade */
+}
+
+.dark .bg-slate-50,
+.dark .bg-neutral-50,
+.dark .bg-zinc-50,
+.dark .bg-[#F7FAF8] {
+  background-color: #010f04 !important;
+}
+
+.dark .bg-[#f0fdf4],
+.dark .bg-emerald-50,
+.dark .bg-emerald-100\/10 {
+  background-color: #02200a !important;
+}
+
+.dark .bg-emerald-55\/70,
+.dark .bg-emerald-50\/70,
+.dark .bg-emerald-50\/60 {
+  background-color: rgba(2, 44, 18, 0.7) !important;
+}
+
+/* Borders mappings to fine dark emerald glows */
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-emerald-500\/10,
+.dark .border-emerald-550\/15,
+.dark .border-emerald-555\/15,
+.dark .border-emerald-100,
+.dark .border-emerald-250\/10,
+.dark .border-emerald-300\/10 {
+  border-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-y > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Modals & popup cards styling */
+.dark div[role="dialog"],
+.dark .bg-white\/95,
+.dark .bg-white\/90 {
+  background-color: #010f04 !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+/* Form controls, inputs, selects, textareas */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #010a04 !important;
+  color: #ecfdf5 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgba(52, 211, 153, 0.5) !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Specific elements adjustments */
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  box-shadow: 0 10px 25px -5px rgba(1, 10, 4, 0.9), 0 8px 10px -6px rgba(1, 10, 4, 0.9) !important;
+}
+
+/* Text emerald selection and custom colors adjustment */
+.dark .text-emerald-950 span {
+  color: #34d399 !important; /* amber/gold text replacement headers */
+}
+
+.dark .italic.font-serif.text-emerald-600 {
+  color: #fbbf24 !important; /* Make title gold look extremely awesome */
+}
+
+/* Video Pulse ring */
+.dark .bg-white\/10 {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+/* Adjust stats cards */
+.dark .bg-white\/80 {
+  background-color: rgba(1, 20, 6, 0.8) !important;
+}
+
+/* Back to Top button in dark mode */
+.dark button.bg-emerald-600 {
+  background-color: #059669 !important;
+}
+.dark button.bg-emerald-600:hover {
+  background-color: #047857 !important;
+}
+
+
