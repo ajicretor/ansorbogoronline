@@ -71,7 +71,9 @@ export default function AdsBanner() {
               Butuh space iklan, hubungi admin
             </span>
             <span className="text-[10px] text-neutral-400 mt-1">
-              Klik di sini untuk pasang banner iklan kemitraan strategis Sahabat!
+              <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8464064075635048"
+               crossorigin="anonymous"></script>
+              // Klik di sini untuk pasang banner iklan kemitraan strategis Sahabat!
             </span>
           </div>
         )}
