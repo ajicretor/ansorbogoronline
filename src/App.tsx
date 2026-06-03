@@ -72,6 +72,16 @@ function MainAppContent() {
     }
   }, [officialPamphlet]);
 
+  useEffect(() => {
+    // Auto-close floating banner after 60 seconds
+    if (showPromoPopup) {
+      const timer = setTimeout(() => {
+        handleClosePromoPopup();
+      }, 60000);
+      return () => clearTimeout(timer);
+    }
+  }, [showPromoPopup]);
+
   const handleClosePromoPopup = () => {
     setShowPromoPopup(false);
     sessionStorage.setItem("ansor_bogor_promo_popup_shown", "true");
@@ -194,26 +204,17 @@ function MainAppContent() {
         onNewsClose={() => setSelectedNews(null)}
       />
 
-      {/* PAMPHLET ACTIVITY POPUP */}
+      {/* PAMPHLET ACTIVITY FLOATING BANNER */}
       <AnimatePresence>
         {showPromoPopup && officialPamphlet && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            {/* Backdrop blur with dark overlays */}
+          <div className="fixed bottom-6 left-6 md:bottom-8 md:left-8 z-[90] pointer-events-auto">
+            {/* Main Floating Banner Card (240x440px) */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={handleClosePromoPopup}
-              className="absolute inset-0 bg-black/85 backdrop-blur-md cursor-pointer"
-            />
-
-            {/* Main Alert Card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 350 }}
-              className="relative w-[240px] h-[340px] rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.85)] border border-emerald-500/30 bg-[#021307] group cursor-pointer z-10"
+              initial={{ opacity: 0, scale: 0.85, x: -60, y: 60 }}
+              animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, x: -60, y: 60 }}
+              transition={{ type: "spring", damping: 25, stiffness: 280 }}
+              className="relative w-[240px] h-[440px] rounded-2xl overflow-hidden shadow-[0_12px_45px_rgba(0,0,0,0.75)] border-2 border-emerald-500/40 bg-[#021307] group cursor-pointer"
               onClick={handlePromoPopupClick}
             >
               <div className="w-full h-full overflow-hidden">
@@ -226,7 +227,7 @@ function MainAppContent() {
               </div>
 
               {/* Hover overlay hint */}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/90 to-transparent p-4 pb-3.5 text-center font-sans">
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/95 to-transparent p-4 pb-3.5 text-center font-sans">
                 <p className="text-ansor-gold text-[8px] font-bold tracking-widest uppercase mb-0.5 font-mono">Daftar Kaderisasi</p>
                 <h3 className="text-white text-[11px] font-bold tracking-tight font-sans leading-tight">Ketuk di Sini untuk Mendaftar</h3>
               </div>
@@ -238,12 +239,22 @@ function MainAppContent() {
                   e.stopPropagation(); // Avoid triggering redirection
                   handleClosePromoPopup();
                 }}
-                className="absolute top-2.5 right-2.5 bg-black/75 hover:bg-black/95 text-white/95 hover:text-white w-7 h-7 rounded-full border border-white/10 flex items-center justify-center transition-all cursor-pointer pointer-events-auto z-20 shadow-xl hover:scale-110"
+                className="absolute top-2.5 right-2.5 bg-black/80 hover:bg-black text-white/95 hover:text-white w-7 h-7 rounded-full border border-white/10 flex items-center justify-center transition-all cursor-pointer pointer-events-auto z-20 shadow-xl hover:scale-110"
                 title="Tutup Pamflet"
                 id="close-promo-popup"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
+
+              {/* 60 Seconds Timer visual progress line at the top */}
+              <div className="absolute top-0 left-0 w-full h-[3px] bg-white/20 z-10 overflow-hidden">
+                <motion.div
+                  initial={{ width: "100%" }}
+                  animate={{ width: "0%" }}
+                  transition={{ duration: 60, ease: "linear" }}
+                  className="h-full bg-gradient-to-r from-emerald-450 to-teal-400"
+                />
+              </div>
             </motion.div>
           </div>
         )}
