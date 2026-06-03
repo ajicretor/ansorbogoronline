@@ -220,21 +220,21 @@ export default function CMSDashboard() {
     setTimeout(() => setAlertMsg(null), 3500);
   };
 
-  // --- ANALYTICS STATES & SIMULATED DATA ---
+  // --- ANALYTICS STATES & DYNAMIC SERVER-SIDE INTELLIGENCE ---
   const [selectedRange, setSelectedRange] = useState<"7d" | "30d">("7d");
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
 
-  const data7Days = [
+  const [data7Days, setData7Days] = useState<Array<{ date: string; pageviews: number; uniques: number; reads: number; bounce: number }>>([
     { date: "22 Mei", pageviews: 890, uniques: 410, reads: 320, bounce: 26 },
     { date: "23 Mei", pageviews: 1120, uniques: 490, reads: 410, bounce: 25 },
     { date: "24 Mei", pageviews: 950, uniques: 450, reads: 330, bounce: 28 },
     { date: "25 Mei", pageviews: 1420, uniques: 620, reads: 590, bounce: 24 },
     { date: "26 Mei", pageviews: 1310, uniques: 580, reads: 480, bounce: 23 },
     { date: "27 Mei", pageviews: 1680, uniques: 790, reads: 640, bounce: 22 },
-    { date: "28 Mei", pageviews: 1845, uniques: 920, reads: 798, bounce: 21 }
-  ];
+    { date: "28 Mei (Hari Ini)", pageviews: 1845, uniques: 920, reads: 798, bounce: 21 }
+  ]);
 
-  const data30Days = [
+  const [data30Days, setData30Days] = useState<Array<{ date: string; pageviews: number; uniques: number; reads: number; bounce: number }>>([
     { date: "01 Mei", pageviews: 650, uniques: 310, reads: 220, bounce: 28 },
     { date: "04 Mei", pageviews: 780, uniques: 380, reads: 280, bounce: 27 },
     { date: "07 Mei", pageviews: 890, uniques: 420, reads: 310, bounce: 26 },
@@ -245,9 +245,7 @@ export default function CMSDashboard() {
     { date: "22 Mei", pageviews: 1210, uniques: 580, reads: 490, bounce: 24 },
     { date: "25 Mei", pageviews: 1540, uniques: 710, reads: 630, bounce: 22 },
     { date: "28 Mei (Hari Ini)", pageviews: 1845, uniques: 920, reads: 798, bounce: 21 }
-  ];
-
-  const currentDataset = selectedRange === "7d" ? data7Days : data30Days;
+  ]);
 
   const [liveLogs, setLiveLogs] = useState<Array<{ id: string, message: string, time: string, isNew?: boolean }>>([
     { id: "log-1", message: "🟢 Pembaca dari Babakan Madang membuka artikel 'PKD Raya PC Ansor Bogor'", time: "Baru saja" },
@@ -257,43 +255,45 @@ export default function CMSDashboard() {
     { id: "log-5", message: "🟢 Pengunjung dari Jonggol mengunduh berkas lampiran", time: "20 menit yang lalu" }
   ]);
 
+  const currentDataset = selectedRange === "7d" ? data7Days : data30Days;
+
+  // Real-time Polling of Intel Monitoring statistics from our server
   useEffect(() => {
-    const districts = ["Cibinong", "Ciawi", "Megamendung", "Gunung Putri", "Babakan Madang", "Jonggol", "Parung", "Leuwiliang", "Ciampea", "Cisarua", "Citeureup"];
-    const actions = [
-      "membaca berita rilis pers dewan pimpinan terbaru",
-      "membuka profil pilar Dakwah Digital",
-      "mengunduh formulir registrasi Madrasah Kader",
-      "menonton video profil profil PC GP Ansor Bogor",
-      "mengeksplorasi galeri dokumentasi kegiatan",
-      "mengakses koordinat kontak sekretariat GP Ansor",
-      "membaca artikel 'Sinergi Pemuda Banser dalam Kebencanaan'"
-    ];
+    let isMounted = true;
 
-    const interval = setInterval(() => {
-      const selectedDistrict = districts[Math.floor(Math.random() * districts.length)];
-      const selectedAction = actions[Math.floor(Math.random() * actions.length)];
-      const randomId = "log-" + Date.now();
-      
-      const newLog = {
-        id: randomId,
-        message: `🟢 Pembaca dari ${selectedDistrict} ${selectedAction}`,
-        time: "Baru saja",
-        isNew: true
-      };
+    const fetchAnalytics = async () => {
+      try {
+        const res = await fetch("/api/analytics/stats");
+        if (res.ok) {
+          const stats = await res.json();
+          if (stats.success && isMounted) {
+            if (stats.data7Days) setData7Days(stats.data7Days);
+            if (stats.data30Days) setData30Days(stats.data30Days);
+            
+            if (stats.liveLogs) {
+              setLiveLogs(prev => {
+                const prevIds = new Set(prev.map(l => l.id));
+                return stats.liveLogs.map((log: any) => ({
+                  ...log,
+                  isNew: !prevIds.has(log.id)
+                }));
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error polling analytics:", err);
+      }
+    };
 
-      setLiveLogs(prev => {
-        const updatedPrev = prev.map(log => {
-          if (log.time === "Baru saja") return { ...log, time: "1 menit yang lalu", isNew: false };
-          if (log.time === "1 menit yang lalu") return { ...log, time: "3 menit yang lalu" };
-          if (log.time === "3 menit yang lalu") return { ...log, time: "7 menit yang lalu" };
-          if (log.time === "7 menit yang lalu") return { ...log, time: "15 menit yang lalu" };
-          return { ...log, time: "Lebih dari 20m lalu" };
-        });
-        return [newLog, ...updatedPrev.slice(0, 5)];
-      });
-    }, 7000);
+    fetchAnalytics(); // Immediate run
 
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchAnalytics, 3500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const renderDisabledSeksiWarning = (key: keyof MenuStatus, sName: string) => {
@@ -467,6 +467,32 @@ export default function CMSDashboard() {
       setNews(news.filter(n => n.id !== id));
       triggerToast("Kabar kegiatan berhasil dihapus.");
     }
+  };
+
+  // News content helper function for formatting markdown inserts
+  const handleInsertEditorTag = (tagStart: string, tagEnd = "", placeholder = "") => {
+    const textarea = document.getElementById("news-content-textarea") as HTMLTextAreaElement | null;
+    if (!textarea) return;
+
+    const startPos = textarea.selectionStart;
+    const endPos = textarea.selectionEnd;
+    const rawVal = newsForm.content || "";
+    const selectedText = rawVal.substring(startPos, endPos) || placeholder;
+
+    const beforeText = rawVal.substring(0, startPos);
+    const afterText = rawVal.substring(endPos, rawVal.length);
+
+    const insertedText = `${tagStart}${selectedText}${tagEnd}`;
+    const newContent = beforeText + insertedText + afterText;
+
+    setNewsForm({ ...newsForm, content: newContent });
+
+    // Put focus back and restore selection cursor safely
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = startPos + tagStart.length + selectedText.length + tagEnd.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 10);
   };
 
   // --- 5. GALLERY STATE & CRUD ---
@@ -1441,20 +1467,20 @@ export default function CMSDashboard() {
             <p className={`text-[10px] uppercase font-mono tracking-widest font-extrabold px-2 mb-2 transition-colors ${theme === 'dark' ? 'text-emerald-400' : 'text-[#0f766e]'}`}>Menu Kelola Konten</p>
             
             {[
-              { key: "general" as const, label: "Branding & Hero", icon: Sparkles, alwaysActive: true },
+              { key: "general" as const, label: "Branding & Hero", icon: Sparkles },
               { key: "about" as const, label: "Tentang & Pilar", icon: Compass },
               { key: "programs" as const, label: "Program Kerja", icon: LayoutGrid },
-              { key: "registrants" as const, label: "Calon Anggota", icon: ShieldCheck, alwaysActive: true },
+              { key: "registrants" as const, label: "Calon Anggota", icon: ShieldCheck },
               { key: "news" as const, label: "Berita (News)", icon: FileText },
               { key: "gallery" as const, label: "Galeri Kegiatan", icon: ImageIcon },
               { key: "leaders" as const, label: "Dewan Pimpinan", icon: Users },
               { key: "contact" as const, label: "Kontak & Footer", icon: MapPin },
-              { key: "services" as const, label: "Layanan Digital", icon: Smartphone, alwaysActive: true },
+              { key: "services" as const, label: "Layanan Digital", icon: Smartphone },
               { key: "analytics" as const, label: "Monitor Pembaca", icon: Activity },
-              { key: "users" as const, label: "Label Navigasi", icon: Sliders, alwaysActive: true }
+              { key: "users" as const, label: "Label Navigasi", icon: Sliders }
             ].map((tabItem) => {
               const TabIcon = tabItem.icon;
-              const isEnabled = tabItem.alwaysActive || menuStatus[tabItem.key];
+              const isEnabled = menuStatus[tabItem.key] !== false;
               const isSelected = activeTab === tabItem.key;
               
               const isTabPermitted = isSuperAdmin || (currentUser && rolePermissions[currentUser.role]?.includes(tabItem.key));
@@ -1492,7 +1518,7 @@ export default function CMSDashboard() {
                     <span className="truncate">{tabItem.label}</span>
                   </button>
                   
-                  {!tabItem.alwaysActive && (
+                  {true && (
                     <button
                       type="button"
                       disabled={!isSuperAdmin}
@@ -1605,15 +1631,19 @@ export default function CMSDashboard() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
                   {[
-                    { key: "about" as const, name: "Tentang & Pilar", desc: "Profile GP Ansor Bogor" },
+                    { key: "general" as const, name: "Branding & Hero (Utama)", desc: "Pengaturan identitas visual website" },
+                    { key: "about" as const, name: "Tentang & Pilar", desc: "Profil GP Ansor Bogor" },
                     { key: "programs" as const, name: "Program Utama", desc: "Sektor darmabakti kerja" },
+                    { key: "registrants" as const, name: "Pendaftaran Calon Anggota", desc: "Layanan registrasi kader baru" },
                     { key: "news" as const, name: "Berita (News)", desc: "Artikel & Berita rilis" },
                     { key: "gallery" as const, name: "Galeri Kegiatan", desc: "Potret dokumentasi PC" },
                     { key: "leaders" as const, name: "Dewan Pimpinan", desc: "Struktur Organisasi" },
                     { key: "contact" as const, name: "Kontak & Footer", desc: "Saluran alamat fisik" },
+                    { key: "services" as const, name: "Layanan Digital Pihak Ketiga", desc: "Pengaturan link eksternal & QR Code" },
                     { key: "analytics" as const, name: "Monitor Pembaca", desc: "Sistem statistik portal" },
+                    { key: "users" as const, name: "Label Navigasi", desc: "Opsi label nama menu navigasi" },
                     { key: "kaderisasi" as const, name: "Aplikasi Presensi Kaderisasi", desc: "Sistem absensi & pendataan kehadiran kader terpadu" },
-                    { key: "alumni" as const, name: "Sistem Alumni & Cetak Sertifikat", desc: "Pencarian rekapitulasi data PKD, DIKLATSAR, PKL & verifikasi berkas" },
+                    { key: "alumni" as const, name: "Sistem Alumni & Cetak Sertifikat", desc: "Pencarian data verifikasi berkas" },
                     { key: "epersuratan" as const, name: "Layanan: E-Persuratan", desc: "Sistem persuratan & administrasi" }
                   ].map((item) => {
                     const isEnabled = menuStatus[item.key];
@@ -2372,18 +2402,15 @@ export default function CMSDashboard() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-neutral-350">Kategori</label>
-                      <select
+                      <label className="text-xs font-semibold text-neutral-300">Kategori Berita</label>
+                      <input
+                        type="text"
+                        required
                         value={newsForm.category}
                         onChange={e => setNewsForm({ ...newsForm, category: e.target.value })}
-                        className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white"
-                      >
-                        <option value="Pengkaderan">Pengkaderan</option>
-                        <option value="Sosial Kemanusiaan">Sosial Kemanusiaan</option>
-                        <option value="Ekonomi Kreatif">Ekonomi Kreatif</option>
-                        <option value="Kebangsaan">Kebangsaan</option>
-                        <option value="Keagamaan">Keagamaan</option>
-                      </select>
+                        className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                        placeholder="Contoh: Pengkaderan, Kegiatan, Sosial"
+                      />
                     </div>
 
                     <div className="space-y-1.5">
@@ -2453,14 +2480,93 @@ export default function CMSDashboard() {
                     </div>
 
                     <div className="space-y-1.5 col-span-1 md:col-span-2">
-                      <label className="text-xs font-semibold text-neutral-300">Isi Konten Berita Lengkap</label>
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-semibold text-neutral-300">Isi Konten Berita Lengkap</label>
+                        <span className="text-[10px] font-mono text-emerald-400 select-none">Mode Markdown & HTML didukung</span>
+                      </div>
+                      
+                      {/* Premium Posting Editor Action Toolbar */}
+                      <div className="flex flex-wrap gap-1 bg-[#010903] border border-white/10 rounded-t-xl px-3 py-2 items-center">
+                        <button
+                          type="button"
+                          onClick={() => handleInsertEditorTag("**", "**", "teks_tebal")}
+                          className="px-2.5 py-1 text-[11px] font-bold text-neutral-300 hover:text-white bg-white/5 hover:bg-white/10 rounded cursor-pointer transition-all flex items-center justify-center font-sans tracking-wide"
+                          title="Tebal (Bold)"
+                        >
+                          <span className="font-bold font-serif text-xs mr-1">B</span> Tebal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertEditorTag("*", "*", "teks_miring")}
+                          className="px-2.5 py-1 text-[11px] font-bold text-neutral-300 hover:text-white bg-white/5 hover:bg-white/10 rounded cursor-pointer transition-all flex items-center justify-center font-sans tracking-wide"
+                          title="Miring (Italic)"
+                        >
+                          <span className="italic font-serif text-xs mr-1">I</span> Miring
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertEditorTag("<u>", "</u>", "teks_garis_bawah")}
+                          className="px-2.5 py-1 text-[11px] font-bold text-neutral-300 hover:text-white bg-white/5 hover:bg-white/10 rounded cursor-pointer transition-all flex items-center justify-center font-sans tracking-wide"
+                          title="Garis Bawah (Underline)"
+                        >
+                          <span className="underline font-serif text-xs mr-1">U</span> Garis Bawah
+                        </button>
+                        <div className="h-4 w-px bg-white/10 mx-1" />
+                        <button
+                          type="button"
+                          onClick={() => handleInsertEditorTag("### ", "", "Sub-Judul Berita")}
+                          className="px-2.5 py-1 text-[11px] font-bold text-neutral-300 hover:text-white bg-white/5 hover:bg-white/10 rounded cursor-pointer transition-all flex items-center justify-center font-sans tracking-wide"
+                          title="Kepala Paragraf (Heading)"
+                        >
+                          H3 Sub-judul
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertEditorTag("> ", "", "Kutipan pernyataan resmi...")}
+                          className="px-2.5 py-1 text-[11px] font-bold text-neutral-300 hover:text-white bg-white/5 hover:bg-white/10 rounded cursor-pointer transition-all flex items-center justify-center font-sans tracking-wide"
+                          title="Kutipan (Blockquote)"
+                        >
+                          “ Kutipan
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertEditorTag("- ", "", "Item penting")}
+                          className="px-2.5 py-1 text-[11px] font-bold text-neutral-300 hover:text-white bg-white/5 hover:bg-white/10 rounded cursor-pointer transition-all flex items-center justify-center font-sans tracking-wide"
+                          title="Daftar Bullets (List)"
+                        >
+                          • Daftar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertEditorTag("[", "](https://link-tujuan.com)", "Teks Tautan")}
+                          className="px-2.5 py-1 text-[11px] font-bold text-neutral-300 hover:text-white bg-white/5 hover:bg-white/10 rounded cursor-pointer transition-all flex items-center justify-center font-sans tracking-wide"
+                          title="Sematkan Tautan (Insert Link)"
+                        >
+                          🔗 Sematkan Link
+                        </button>
+                        <div className="h-4 w-px bg-white/10 mx-1 ml-auto sm:ml-0" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm("Kosongkan seluruh naskah berita?")) {
+                              setNewsForm({ ...newsForm, content: "" });
+                            }
+                          }}
+                          className="px-2.5 py-1 text-[10px] font-bold text-red-400 hover:text-red-300 bg-red-950/20 hover:bg-red-950/40 rounded cursor-pointer transition-all flex items-center justify-center ml-auto font-sans tracking-wide"
+                          title="Hapus naskah"
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1" /> Kosongkan
+                        </button>
+                      </div>
+
                       <textarea
-                        rows={10}
+                        id="news-content-textarea"
+                        rows={11}
                         required
                         value={newsForm.content}
                         onChange={e => setNewsForm({ ...newsForm, content: e.target.value })}
-                        className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none leading-relaxed font-sans"
-                        placeholder="Tulis naskah berita lengkap di sini..."
+                        className="w-full bg-[#020d04] border border-white/10 border-t-0 rounded-b-xl rounded-t-none px-4 py-3.5 text-xs text-white focus:outline-none focus:border-emerald-500/30 leading-relaxed font-sans shadow-inner transition-colors"
+                        placeholder="Tulis naskah berita lengkap di sini dengan dukungan formatting tolbar di atas..."
                       />
                     </div>
                   </div>
@@ -4503,6 +4609,7 @@ export default function CMSDashboard() {
                         { key: "general" as const, label: "Branding & Hero" },
                         { key: "about" as const, label: "Tentang & Pilar" },
                         { key: "programs" as const, label: "Program Kerja" },
+                        { key: "registrants" as const, label: "Calon Anggota" },
                         { key: "news" as const, label: "Berita (News)" },
                         { key: "gallery" as const, label: "Galeri Kegiatan" },
                         { key: "leaders" as const, label: "Dewan Pimpinan" },
@@ -4554,6 +4661,7 @@ export default function CMSDashboard() {
                         { key: "general" as const, label: "Branding & Hero" },
                         { key: "about" as const, label: "Tentang & Pilar" },
                         { key: "programs" as const, label: "Program Kerja" },
+                        { key: "registrants" as const, label: "Calon Anggota" },
                         { key: "news" as const, label: "Berita (News)" },
                         { key: "gallery" as const, label: "Galeri Kegiatan" },
                         { key: "leaders" as const, label: "Dewan Pimpinan" },

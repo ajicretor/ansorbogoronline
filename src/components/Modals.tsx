@@ -42,6 +42,51 @@ export default function Modals({
   // Form handling inside Join Modal
   const [regType, setRegType] = useState<"select" | "member" | "kaderisasi">("select");
 
+  // State for News share copy / comments section
+  const [newsComments, setNewsComments] = useState<{ [id: string]: Array<{ author: string; content: string; time: string }> }>({
+    "news-ekraf-workshop": [
+      { author: "Sahabat M. Rifqi", content: "Luar biasa program ekonomi kreatif ini, sangat membantu kemandirian sahabat-sahabat kader di tingkat PAC Kabupaten Bogor.", time: "03 Juni 2026, 11:24" },
+      { author: "Kader Sukajaya", content: "Sinergi yang sangat mantap! Semoga pelatihan kewirausahaan ini bisa berkelanjutan di PAC kecamatan lainnya.", time: "02 Juni 2026, 19:12" },
+      { author: "Banser Protokoler", content: "Siap mendukung dan mengawal jalannya kemandirian ekonomi pemuda Ansor Bogor!", time: "01 Juni 2026, 14:05" }
+    ],
+    "news-kaderisasi-raya": [
+      { author: "Sahabat Farhan", content: "Massa pembaiatan yang luar biasa! Selamat bergabung sahabat-sahabat banser baru, mari jaga Aqidah Aswaja An-Nahdliyah.", time: "03 Juni 2026, 09:40" },
+      { author: "Banser Senior Cibinong", content: "Disiplin tinggi, khidmat tanpa batas. Selamat bertugas barisan Banser Kabupaten Bogor!", time: "02 Juni 2026, 17:35" }
+    ]
+  });
+  const [newCommentText, setNewCommentText] = useState("");
+  const [showCommentsSection, setShowCommentsSection] = useState(false);
+  const [justCopied, setJustCopied] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState("Tersalin!");
+
+  // Helper inside news detail to resolve or prep comments on draft news
+  const getCommentsForArticle = (id: string, title: string) => {
+    if (newsComments[id]) return newsComments[id];
+    const charSum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const count = (charSum % 2) + 2; 
+    const base = [
+      { author: "Sahabat Patriot Ansor", content: `Kabar gembira bagi Nahdliyin Bogor! Tulisan tentang "${title}" memberi gambaran nyata gerakan kepemudaan kita.`, time: "3 Jam yang lalu" },
+      { author: "Kader Ansor Kecamatan", content: "Rapatkan barisan, satu komando mengawal instruksi pimpinan cabang PC GP Ansor Kabupaten Bogor.", time: "5 Jam yang lalu" },
+      { author: "Banser Husada", content: "Sinergi ikhlas untuk kemaslahatan umat. Semoga Allah meridhoi khidmat kita.", time: "1 Hari yang lalu" }
+    ];
+    return base.slice(0, count);
+  };
+
+  const handleAddComment = (newsId: string) => {
+    if (!newCommentText.trim()) return;
+    const current = newsComments[newsId] || getCommentsForArticle(newsId, selectedNews?.title || "");
+    const updated = [
+      {
+        author: "Tamu / Pengunjung",
+        content: newCommentText.trim(),
+        time: "Baru Saja"
+      },
+      ...current
+    ];
+    setNewsComments({ ...newsComments, [newsId]: updated });
+    setNewCommentText("");
+  };
+
   // State for official flyer interactive hover magnifier
   const [zoomScale, setZoomScale] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -61,6 +106,15 @@ export default function Modals({
       setFormErrors({});
     }
   }, [isJoinOpen, initialRegType]);
+
+  // Sync news comments view reset when article opens
+  useEffect(() => {
+    if (selectedNews) {
+      setShowCommentsSection(false);
+      setNewCommentText("");
+      setJustCopied(false);
+    }
+  }, [selectedNews]);
   const [formData, setFormData] = useState({
     name: "",
     nik: "",
@@ -1240,6 +1294,235 @@ export default function Modals({
                     Bagi masyarakat yang tertarik untuk turut serta memberikan dukungan atau mendaftarkan diri menjadi bagian dalam angkatan perjuangan kader berikutnya, pendaftaran kini tersedia secara digital melalui tautan registrasi di halaman web utama kami. Mari berkhidmat bersama demi kemakmuran umat dan bangsa Indonesia.
                   </p>
                 </div>
+
+                {/* INTERACTIVE SHARING & COMMENTS BAR */}
+                <div className="pt-6 mt-8 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 font-sans">
+                  {/* Left: Comments Pill */}
+                  <button
+                    type="button"
+                    onClick={() => setShowCommentsSection(!showCommentsSection)}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-full transition-all shadow-sm active:scale-95 cursor-pointer"
+                  >
+                    <span className="text-sm">💬</span>
+                    <span>
+                      {getCommentsForArticle(selectedNews.id, selectedNews.title).length} komentar
+                    </span>
+                  </button>
+
+                  {/* Right: BAGIKAN with Circle Social Media Buttons */}
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-slate-500 text-[10px] sm:text-xs font-bold tracking-widest uppercase select-none mr-1.5">
+                      BAGIKAN
+                    </span>
+
+                    {/* Facebook Share */}
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + "/news/" + selectedNews.id)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-full bg-[#3B5998] hover:bg-[#2d4373] text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
+                      title="Bagikan ke Facebook"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+                      </svg>
+                    </a>
+
+                    {/* X (formerly Twitter) Share */}
+                    <a
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.origin + "/news/" + selectedNews.id)}&text=${encodeURIComponent(`Baca berita terbaru PC GP Ansor Bogor: ${selectedNews.title}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-full bg-black hover:bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
+                      title="Bagikan ke X"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                      </svg>
+                    </a>
+
+                    {/* WhatsApp Share */}
+                    <a
+                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${selectedNews.title} ✨ Selengkapnya baca di: ${window.location.origin}/news/${selectedNews.id}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-full bg-[#25D366] hover:bg-[#1ebd5d] text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
+                      title="Bagikan ke WhatsApp"
+                    >
+                      <svg className="w-4 h-4 translate-y-[0.5px]" fill="currentColor" viewBox="0 0 24 24">
+                        <path fillRule="evenodd" clipRule="evenodd" d="M12.031 2c-5.511 0-9.982 4.47-9.982 9.98 0 1.95.56 3.78 1.529 5.34l-1.026 3.75 3.843-1.01c1.5.91 3.25 1.44 5.122 1.44 5.51 0 9.98-4.47 9.98-9.98C22.013 6.47 17.542 2 12.031 2zm6.657 14.15c-.27.76-1.37 1.39-1.9 1.43-.53.04-1.2-.1-3.41-.98-2.83-1.12-4.66-3.99-4.8-4.18-.14-.19-1.15-1.53-1.15-2.92 0-1.39.73-2.07 1-2.35.26-.27.53-.34.71-.34H10c.18 0 .42-.07.65.48.24.58.81 1.98.88 2.12.07.14.12.3.02.49-.1.19-.15.3-.3.48-.15.17-.32.39-.46.52-.16.15-.33.32-.14.65.19.32.85 1.4 1.83 2.27 1.25 1.11 2.3 1.45 2.63 1.62.33.16.52.12.72-.1.2-.23.88-1.02 1.12-1.37.23-.35.47-.3.8-.17.33.12 2.1.99 2.46 1.17.36.18.6.27.69.42.08.15.08.87-.2 1.63z" />
+                      </svg>
+                    </a>
+
+                    {/* Telegram Share */}
+                    <a
+                      href={`https://t.me/share/url?url=${encodeURIComponent(window.location.origin + "/news/" + selectedNews.id)}&text=${encodeURIComponent(selectedNews.title)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-full bg-[#0088cc] hover:bg-[#0077b3] text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
+                      title="Bagikan ke Telegram"
+                    >
+                      <svg className="w-3.5 h-3.5 -translate-x-[0.5px] translate-y-[0.5px]" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.88 7.32l-1.68 7.92c-.12.56-.48.68-.96.4l-2.56-1.88-1.24 1.2c-.12.12-.24.24-.36.24l.16-2.52 4.6-4.16c.2-.16-.04-.24-.3-.08l-5.68 3.56-2.44-.76c-.52-.16-.52-.52.12-.76l9.6-3.72c.44-.16.84.12.64.96z" />
+                      </svg>
+                    </a>
+
+                    {/* Instagram Share & Copy */}
+                    <a
+                      href="https://www.instagram.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        const directUrl = `${window.location.origin}/news/${selectedNews.id}`;
+                        navigator.clipboard.writeText(directUrl);
+                        setCopiedMessage("Link IG Tersalin!");
+                        setJustCopied(true);
+                        setTimeout(() => setJustCopied(false), 2000);
+                      }}
+                      className="relative w-8 h-8 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] hover:scale-110 active:scale-95 text-white flex items-center justify-center transition-all shadow-md"
+                      title="Salin Link & Bagikan ke Instagram"
+                    >
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                      </svg>
+                      
+                      <AnimatePresence>
+                        {justCopied && copiedMessage === "Link IG Tersalin!" && (
+                          <motion.span
+                            initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                            animate={{ opacity: 1, y: -30, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            className="absolute bg-gradient-to-r from-pink-600 to-purple-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap z-50 animate-bounce"
+                          >
+                            Link IG Tersalin!
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </a>
+
+                    {/* TikTok Share & Copy */}
+                    <a
+                      href="https://www.tiktok.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        const directUrl = `${window.location.origin}/news/${selectedNews.id}`;
+                        navigator.clipboard.writeText(directUrl);
+                        setCopiedMessage("Link TikTok Tersalin!");
+                        setJustCopied(true);
+                        setTimeout(() => setJustCopied(false), 2000);
+                      }}
+                      className="relative w-8 h-8 rounded-full bg-black hover:scale-110 active:scale-95 text-white flex items-center justify-center transition-all border border-neutral-800 shadow-md"
+                      title="Salin Link & Bagikan ke TikTok"
+                    >
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.59 4.19 1.05 1.15 2.52 1.83 4.07 1.94V10c-1.12-.01-2.23-.33-3.19-.92-.61-.38-1.14-.88-1.54-1.48v6.78c-.01 1.93-.65 3.82-1.84 5.31-1.39 1.63-3.5 2.47-5.61 2.27-2.32-.23-4.35-1.74-5.16-3.88-.93-2.31-.41-5.06 1.34-6.85 1.55-1.51 3.82-2.12 5.94-1.57V13.8c-.59-.2-1.23-.21-1.83-.04-.84.23-1.54.85-1.89 1.62-.48.98-.32 2.19.41 3.01.62.69 1.54 1.03 2.46.91 1-.1 1.81-.88 1.98-1.88.08-.47.07-.94.07-1.41V.02z" />
+                      </svg>
+                      
+                      <AnimatePresence>
+                        {justCopied && copiedMessage === "Link TikTok Tersalin!" && (
+                          <motion.span
+                            initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                            animate={{ opacity: 1, y: -30, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            className="absolute bg-neutral-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap z-50 animate-bounce"
+                          >
+                            Link TikTok Tersalin!
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </a>
+
+                    {/* Copy Link Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const directUrl = `${window.location.origin}/news/${selectedNews.id}`;
+                        navigator.clipboard.writeText(directUrl);
+                        setCopiedMessage("Tersalin!");
+                        setJustCopied(true);
+                        setTimeout(() => setJustCopied(false), 2000);
+                      }}
+                      className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md cursor-pointer ${
+                        justCopied && copiedMessage === "Tersalin!" ? "bg-emerald-600 text-white" : "bg-slate-500 hover:bg-slate-600 text-white"
+                      }`}
+                      title="Salin Tautan"
+                    >
+                      {justCopied && copiedMessage === "Tersalin!" ? (
+                        <Check className="w-3.5 h-3.5" />
+                      ) : (
+                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                        </svg>
+                      )}
+                      
+                      {/* Floating Copy Success Bubble */}
+                      <AnimatePresence>
+                        {justCopied && copiedMessage === "Tersalin!" && (
+                          <motion.span
+                            initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                            animate={{ opacity: 1, y: -30, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            className="absolute bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap z-50"
+                          >
+                            Tersalin!
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </button>
+                  </div>
+                </div>
+
+                {/* COMMENTS COLLAPSIBLE TRAY */}
+                <AnimatePresence>
+                  {showCommentsSection && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden mt-4 bg-slate-50 border border-slate-200/80 rounded-xl p-4 font-sans"
+                    >
+                      <h4 className="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5">
+                        <span className="text-sm">💬</span> Kolom Diskusi ({getCommentsForArticle(selectedNews.id, selectedNews.title).length} Komentar)
+                      </h4>
+
+                      {/* Comment Input Form */}
+                      <div className="flex gap-2 mb-4">
+                        <input
+                          type="text"
+                          value={newCommentText}
+                          onChange={(e) => setNewCommentText(e.target.value)}
+                          placeholder="Tulis opini atau komentar positif Anda di sini..."
+                          className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-emerald-500 transition-colors"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleAddComment(selectedNews.id);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAddComment(selectedNews.id)}
+                          className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-sm shrink-0"
+                        >
+                          Kirim
+                        </button>
+                      </div>
+
+                      {/* Comments List */}
+                      <div className="space-y-2.5 max-h-[160px] overflow-y-auto pr-1">
+                        {getCommentsForArticle(selectedNews.id, selectedNews.title).map((comment, index) => (
+                          <div key={index} className="bg-white border border-slate-100 p-2.5 rounded-lg text-left shadow-xs">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-[10px] font-bold text-slate-700">{comment.author}</span>
+                              <span className="text-[9px] text-slate-400">{comment.time}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 leading-normal">{comment.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <div className="pt-8 mt-8 border-t border-slate-100 flex justify-between items-center">
                   <span className="text-xs text-slate-400 font-mono">

@@ -58,6 +58,33 @@ function MainAppContent() {
     };
   }, []);
 
+  // Real-time reader analytics tracker
+  useEffect(() => {
+    fetch("/api/analytics/hit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        page: "landing",
+        title: "Landing Page Utama GP Ansor Bogor",
+        referrer: document.referrer
+      })
+    }).catch(err => console.error("Analytics hit error:", err));
+  }, []);
+
+  useEffect(() => {
+    if (selectedNews) {
+      fetch("/api/analytics/hit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          page: `/news/${selectedNews.id}`,
+          title: selectedNews.title,
+          referrer: document.referrer
+        })
+      }).catch(err => console.error("Analytics news hit error:", err));
+    }
+  }, [selectedNews]);
+
   useEffect(() => {
     // Show promo popup if pamphlet exists and hasn't been shown in this window session
     if (officialPamphlet) {

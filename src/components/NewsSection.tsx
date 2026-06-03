@@ -10,12 +10,26 @@ interface NewsSectionProps {
 export default function NewsSection({ onNewsSelect }: NewsSectionProps) {
   const { news } = useCMS();
   const [activeCategory, setActiveCategory] = useState("Semua");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const categories = ["Semua", "Pengkaderan", "Sosial Kemanusiaan", "Ekonomi Kreatif", "Kebangsaan", "Keagamaan"];
+  // Extract all categories entered by authors dynamicly
+  const uniqueCustomCategories = Array.from(new Set<string>(news.map(item => item.category as string).filter(Boolean)));
+  const categories: string[] = ["Semua", ...uniqueCustomCategories];
 
   const filteredNews = activeCategory === "Semua"
     ? news
     : news.filter((item) => item.category === activeCategory);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedNews = filteredNews.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleCategoryChange = (cat: string) => {
+    setActiveCategory(cat);
+    setCurrentPage(1);
+  };
 
   return (
     <section id="berita" className="py-24 bg-gradient-to-b from-white to-slate-50 text-slate-800 relative border-b border-slate-200/40">
@@ -23,25 +37,25 @@ export default function NewsSection({ onNewsSelect }: NewsSectionProps) {
         
         {/* Header */}
         <div className="text-center relative mb-12">
-          <span className="inline-block px-3 py-1 border border-emerald-600/20 bg-emerald-50 text-emerald-700 text-[10px] tracking-[0.25em] font-extrabold uppercase rounded-full">
+          <span className="inline-block px-3 py-1 border border-emerald-600/20 bg-emerald-50 text-emerald-700 text-[10px] tracking-[0.25em] font-extrabold uppercase rounded-full font-sans">
             KABAR GERAKAN
           </span>
           <h3 className="font-display font-light text-3xl sm:text-4xl text-slate-900 tracking-tight mt-4">
             Kabar Terbaru & <span className="italic font-serif text-emerald-600 font-normal">Syi'ar Perjuangan</span>
           </h3>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mt-2.5 font-medium leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mt-2.5 font-medium leading-relaxed font-sans">
             Menyajikan catatan berkala, rilisan pers resmi, dan artikel pemikiran kader muda Nahdlatul Ulama Kabupaten Bogor.
           </p>
         </div>
 
         {/* Categories Tab Selector */}
         <div className="flex flex-wrap items-center justify-center gap-2 mb-12">
-          {categories.map((cat) => (
+          {categories.slice(0, 15).map((cat) => (
             <button
               key={cat}
               type="button"
-              onClick={() => setActiveCategory(cat)}
-              className={`px-4.5 py-1.5 text-[11px] tracking-wider uppercase font-extrabold rounded-full border transition-all cursor-pointer ${
+              onClick={() => handleCategoryChange(cat)}
+              className={`px-4.5 py-1.5 text-[10px] sm:text-[11px] tracking-wider uppercase font-extrabold rounded-full border transition-all cursor-pointer ${
                 activeCategory === cat
                   ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-600/10"
                   : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm"
@@ -54,7 +68,7 @@ export default function NewsSection({ onNewsSelect }: NewsSectionProps) {
 
         {/* News Grid Column cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
-          {filteredNews.map((article) => (
+          {paginatedNews.map((article) => (
             <article
               key={article.id}
               onClick={() => onNewsSelect(article)}
@@ -118,6 +132,50 @@ export default function NewsSection({ onNewsSelect }: NewsSectionProps) {
           <div className="text-center py-16">
             <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-500 font-bold text-sm">Tidak ada berita dalam kategori ini saat ini.</p>
+          </div>
+        )}
+
+        {/* Pagination Navigations: Next and Previous when count exceeds 10 */}
+        {totalPages > 1 && (
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 pt-8" id="news-pagination">
+            <p className="text-xs text-slate-500 font-medium font-sans order-2 sm:order-1">
+              Menampilkan <span className="font-extrabold text-slate-800">{startIndex + 1}</span> hingga <span className="font-extrabold text-slate-800">{Math.min(startIndex + itemsPerPage, filteredNews.length)}</span> dari <span className="font-extrabold text-slate-800">{filteredNews.length}</span> berita
+            </p>
+            <div className="flex items-center gap-2.5 order-1 sm:order-2">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => {
+                  setCurrentPage((prev) => Math.max(prev - 1, 1));
+                  document.getElementById("berita")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className={`px-4 py-2 border rounded-xl text-[11px] font-extrabold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                  currentPage === 1
+                    ? "bg-slate-50 border-slate-150 text-slate-300 cursor-not-allowed"
+                    : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-95 shadow-xs"
+                }`}
+              >
+                &larr; Prev
+              </button>
+              <span className="text-xs font-bold text-slate-600 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-500/10 font-mono">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={currentPage === totalPages}
+                onClick={() => {
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+                  document.getElementById("berita")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className={`px-4 py-2 border rounded-xl text-[11px] font-extrabold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                  currentPage === totalPages
+                    ? "bg-slate-50 border-slate-150 text-slate-300 cursor-not-allowed"
+                    : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-95 shadow-xs"
+                }`}
+              >
+                Next &rarr;
+              </button>
+            </div>
           </div>
         )}
 

@@ -98,6 +98,9 @@ export interface MenuStatus {
   kaderisasi: boolean;
   alumni: boolean;
   epersuratan: boolean;
+  registrants: boolean;
+  services: boolean;
+  users: boolean;
 }
 
 export interface DigitalServiceConfig {

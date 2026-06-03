@@ -188,7 +188,10 @@ const defaultMenuStatus: MenuStatus = {
   analytics: true,
   kaderisasi: true,
   alumni: true,
-  epersuratan: true
+  epersuratan: true,
+  registrants: true,
+  services: true,
+  users: true
 };
 
 const defaultDigitalServices: DigitalServicesState = {
