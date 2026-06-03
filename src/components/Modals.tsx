@@ -42,6 +42,17 @@ export default function Modals({
   // Form handling inside Join Modal
   const [regType, setRegType] = useState<"select" | "member" | "kaderisasi">("select");
 
+  // State for official flyer interactive hover magnifier
+  const [zoomScale, setZoomScale] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: any) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    setMousePos({ x, y });
+  };
+
   // Sync state with preselected pathways when opening Join modal
   useEffect(() => {
     if (isJoinOpen) {
@@ -477,27 +488,28 @@ export default function Modals({
                       <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4.5 mb-2 text-left">
                         <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest font-mono mb-2">● Pamflet / Flyer Kegiatan Resmi</p>
                         <div className="flex flex-col sm:flex-row gap-4 items-start">
-                          <div className="relative w-28 sm:w-24 aspect-[3/4] rounded-xl overflow-hidden shadow-md border border-slate-200 bg-slate-100 shrink-0 mx-auto sm:mx-0">
+                          <div
+                            className="relative w-28 sm:w-24 aspect-[3/4] rounded-xl overflow-hidden shadow-md border border-slate-250 bg-slate-100 shrink-0 mx-auto sm:mx-0 cursor-zoom-in group"
+                            onMouseEnter={() => setZoomScale(true)}
+                            onMouseLeave={() => setZoomScale(false)}
+                            onMouseMove={handleMouseMove}
+                          >
                             <img
                               src={officialPamphlet}
                               alt="Pamflet Kegiatan Resmi"
                               referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover select-none"
+                              style={{
+                                transformOrigin: `${mousePos.x}% ${mousePos.y}%`,
+                                transform: zoomScale ? 'scale(2.8)' : 'scale(1)'
+                              }}
+                              className="w-full h-full object-contain select-none transition-transform duration-150 ease-out"
                             />
                           </div>
-                          <div className="flex-1 space-y-1.5 self-center">
-                            <h4 className="text-xs font-bold text-slate-800 leading-snug font-sans">Pamflet Kegiatan Kaderisasi PC GP Ansor</h4>
-                            <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
-                              Berikut adalah flyer resmi kegiatan kaderisasi PC GP Ansor Kabupaten Bogor yang saat ini sedang aktif dibuka. Silakan simak rincian jadwal dan kelengkapan berkas pada pamflet di samping.
+                          <div className="flex-1 space-y-1.5 self-center font-sans">
+                            <h4 className="text-xs font-bold text-slate-800 leading-snug">Pamflet Kegiatan Kaderisasi PC GP Ansor</h4>
+                            <p className="text-[11px] text-slate-500 leading-relaxed">
+                              Sistem otomatis mendeteksi pamflet aktif kaderisasi PC GP Ansor Kabupaten Bogor. <strong className="text-amber-600">Sorot/arahkan pointer kursor ke gambar pamflet untuk memperbesar rincian info</strong>.
                             </p>
-                            <a
-                              href={officialPamphlet}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] text-amber-600 hover:text-amber-700 font-bold transition-all mt-1 font-sans"
-                            >
-                              Buka Pamflet Ukuran Penuh ↗
-                            </a>
                           </div>
                         </div>
                       </div>

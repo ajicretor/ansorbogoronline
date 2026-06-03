@@ -214,15 +214,15 @@ function MainAppContent() {
               animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, x: -60, y: 60 }}
               transition={{ type: "spring", damping: 25, stiffness: 280 }}
-              className="relative w-[240px] h-[440px] rounded-2xl overflow-hidden shadow-[0_12px_45px_rgba(0,0,0,0.75)] border-2 border-emerald-500/40 bg-[#021307] group cursor-pointer"
+              className="relative w-[240px] h-[440px] rounded-2xl overflow-hidden shadow-[0_12px_45px_rgba(0,0,0,0.75)] border-2 border-emerald-500/40 bg-[#010a03] group cursor-pointer"
               onClick={handlePromoPopupClick}
             >
-              <div className="w-full h-full overflow-hidden">
+              <div className="w-full h-full overflow-hidden p-2.5 pb-15 flex items-center justify-center bg-[#010903]">
                 <img
                   src={officialPamphlet}
                   alt="Pamflet Kegiatan Resmi PC GP Ansor"
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-105"
+                  className="max-w-full max-h-full object-contain rounded-lg border border-emerald-500/25 shadow-md transition-all duration-700 ease-out group-hover:scale-105"
                 />
               </div>
 
