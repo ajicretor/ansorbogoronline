@@ -151,6 +151,33 @@ export interface AdsConfig {
   scriptCode?: string;
 }
 
+export interface Registrant {
+  id: string; // generated format e.g. ANSOR-XXXXXX
+  name: string;
+  nik: string;
+  email: string;
+  whatsapp: string;
+  district: string;
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  
+  // Optional Kaderisasi Fields
+  registrationType?: "member" | "kaderisasi";
+  desa?: string;
+  kabupaten?: string;
+  tempatLahir?: string;
+  tanggalLahir?: string;
+  ukuranKaos?: string;
+  pendidikanAkhir?: string;
+  pendidikanPesantren?: string;
+  pekerjaan?: string;
+  golonganDarah?: string;
+  statusPernikahan?: string;
+  pamfletFile?: string;
+}
+
+
 
 
 

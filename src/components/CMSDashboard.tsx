@@ -5,14 +5,16 @@ import {
   FileText, LayoutGrid, Users, Image as ImageIcon, HelpCircle, ArrowLeft, Eye, MessageSquare, Sparkles,
   MapPin, Phone, Mail, Globe, Laptop, Lightbulb, GraduationCap, Heart, Star, Compass, BookOpen,
   Activity, TrendingUp, Sliders, Smartphone, QrCode, UserCheck, Lock, User, LogOut, Shield, Award, Copy, Terminal, Share2, ShieldCheck,
-  Sun, Moon
+  Sun, Moon, Download
 } from "lucide-react";
 import AnsorLogo from "./AnsorLogo";
 import { supabase } from "../lib/supabase";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import { 
   ProgramItem, NewsArticle, TeamMember, GalleryItem, FAQItem,
   AboutConfig, StrategicPillar, ImpactStat, ContactConfig, MenuStatus,
-  DigitalServicesState, CMSUser, MenuLabels, KaderisasiRow, AdsConfig
+  DigitalServicesState, CMSUser, MenuLabels, KaderisasiRow, AdsConfig, Registrant
 } from "../types";
 
 export default function CMSDashboard() {
@@ -32,6 +34,8 @@ export default function CMSDashboard() {
     menuLabels, setMenuLabels,
     users, setUsers,
     kaderisasiData, setKaderisasiData,
+    registrantsData, setRegistrantsData,
+    officialPamphlet, setOfficialPamphlet,
     resetToDefault,
     publishAllToSupabase,
     setIsCmsOpen,
@@ -140,7 +144,7 @@ export default function CMSDashboard() {
   };
 
   // Selected tab in the CMS (including users & labels configuration)
-  type TabType = "general" | "about" | "programs" | "news" | "gallery" | "leaders" | "contact" | "analytics" | "services" | "users";
+  type TabType = "general" | "about" | "programs" | "news" | "gallery" | "leaders" | "contact" | "analytics" | "services" | "users" | "registrants";
   const [activeTab, setActiveTab] = useState<TabType>("general");
   const [isSyncingDb, setIsSyncingDb] = useState(false);
   const [isSqlExpanded, setIsSqlExpanded] = useState(false);
@@ -152,11 +156,13 @@ export default function CMSDashboard() {
       const persisted = localStorage.getItem("ansor_cms_role_permissions");
       if (persisted) {
         const parsed = JSON.parse(persisted);
-        if (parsed.sekretariat && !parsed.sekretariat.includes("analytics")) {
-          parsed.sekretariat.push("analytics");
+        if (parsed.sekretariat) {
+          if (!parsed.sekretariat.includes("analytics")) parsed.sekretariat.push("analytics");
+          if (!parsed.sekretariat.includes("registrants")) parsed.sekretariat.push("registrants");
         }
-        if (parsed.ketuacabang && !parsed.ketuacabang.includes("analytics")) {
-          parsed.ketuacabang.push("analytics");
+        if (parsed.ketuacabang) {
+          if (!parsed.ketuacabang.includes("analytics")) parsed.ketuacabang.push("analytics");
+          if (!parsed.ketuacabang.includes("registrants")) parsed.ketuacabang.push("registrants");
         }
         return parsed;
       }
@@ -164,8 +170,8 @@ export default function CMSDashboard() {
       console.error("Error loading role permissions:", e);
     }
     return {
-      sekretariat: ["news", "gallery", "analytics"],
-      ketuacabang: ["news", "gallery", "analytics"]
+      sekretariat: ["news", "gallery", "analytics", "registrants"],
+      ketuacabang: ["news", "gallery", "analytics", "registrants"]
     };
   });
 
@@ -191,6 +197,20 @@ export default function CMSDashboard() {
   // Selection states for editing/creating items
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState<boolean>(false);
+
+  // Registrant filters & searches
+  const [registrantSearch, setRegistrantSearch] = useState("");
+  const [registrantFilterDistrict, setRegistrantFilterDistrict] = useState("");
+  const [registrantFilterStatus, setRegistrantFilterStatus] = useState<"all" | "pending" | "approved" | "rejected">("all");
+
+  // Sub-tab inside Calon Anggota (Registrants) CMS
+  const [registrantSubTab, setRegistrantSubTab] = useState<"all" | "kaderisasi">("all");
+  // State for draft official training pamphlet Base64 uploaded in the CMS
+  const [draftPamphlet, setDraftPamphlet] = useState<string>(officialPamphlet || "");
+
+  useEffect(() => {
+    setDraftPamphlet(officialPamphlet || "");
+  }, [officialPamphlet]);
 
   // Success toast/message state
   const [alertMsg, setAlertMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -847,6 +867,286 @@ export default function CMSDashboard() {
     }
   };
 
+  const handleApproveRegistrant = (id: string) => {
+    const updated = registrantsData.map(r => r.id === id ? { ...r, status: "approved" as const } : r);
+    setRegistrantsData(updated);
+    triggerToast("Calon anggota berhasil disetujui (Approved)!", "success");
+  };
+
+  const handleRejectRegistrant = (id: string) => {
+    const updated = registrantsData.map(r => r.id === id ? { ...r, status: "rejected" as const } : r);
+    setRegistrantsData(updated);
+    triggerToast("Calon anggota telah ditolak (Rejected).", "error");
+  };
+
+  const handleDeleteRegistrant = (id: string, name: string) => {
+    if (confirm(`Apakah Anda yakin ingin menghapus calon anggota bernama "${name}" secara permanen?`)) {
+      const updated = registrantsData.filter(r => r.id !== id);
+      setRegistrantsData(updated);
+      triggerToast("Data calon anggota berhasil dihapus.", "success");
+    }
+  };
+
+  const downloadKaderisasiCSV = (dataList: Registrant[]) => {
+    try {
+      const kaderisasiAttendees = dataList.filter(r => r.registrationType === "kaderisasi");
+      if (kaderisasiAttendees.length === 0) {
+        triggerToast("Tidak ada data calon pendaftar kaderisasi untuk diunduh.", "error");
+        return;
+      }
+
+      // Headers for ALL columns filled by participants
+      const headers = [
+        "No",
+        "ID Pendaftaran",
+        "Tanggal Terdaftar",
+        "Nama Lengkap",
+        "NIK",
+        "No HP / WhatsApp",
+        "Email",
+        "Kecamatan Domisili",
+        "Desa",
+        "Kabupaten / Kota",
+        "Tempat Lahir",
+        "Tanggal Lahir",
+        "Usia",
+        "Ukuran Kaos",
+        "Pendidikan Akhir",
+        "Pendidikan Pesantren",
+        "Pekerjaan",
+        "Golongan Darah",
+        "Status Pernikahan",
+        "Alasan Bergabung",
+        "Status Kelayakan"
+      ];
+
+      // Format CSV rows
+      const rows = kaderisasiAttendees.map((r, index) => {
+        let ageStr = "-";
+        if (r.tanggalLahir) {
+          const parts = r.tanggalLahir.split("-");
+          const birthYear = parseInt(parts[0]);
+          if (!isNaN(birthYear)) {
+            ageStr = (2026 - birthYear).toString() + " Tahun";
+          }
+        }
+
+        return [
+          (index + 1).toString(),
+          r.id || "",
+          r.createdAt ? new Date(r.createdAt).toLocaleDateString("id-ID") : "",
+          r.name || "",
+          `="${r.nik || ""}"`, // Protect numeric NIK from Excel truncation
+          `="${r.whatsapp || ""}"`, // Protect phone numbers
+          r.email || "",
+          r.district || "",
+          r.desa || "",
+          r.kabupaten || "",
+          r.tempatLahir || "",
+          r.tanggalLahir || "",
+          ageStr,
+          r.ukuranKaos || "",
+          r.pendidikanAkhir || "",
+          r.pendidikanPesantren || "",
+          r.pekerjaan || "",
+          r.golonganDarah || "",
+          r.statusPernikahan || "",
+          (r.reason || "").replace(/"/g, '""'), // escape quotes
+          r.status || ""
+        ];
+      });
+
+      // Construct content
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(val => `"${val}"`).join(","))
+      ].join("\n");
+
+      // Trigger user browser download
+      const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Rekap_Pendaftaran_Kaderisasi_GP_Ansor_Full_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      triggerToast("Unduh rekap data kaderisasi lengkap (Excel/CSV) sukses!", "success");
+    } catch (err: any) {
+      console.error(err);
+      triggerToast("Gagal mengunduh berkas lengkap.", "error");
+    }
+  };
+
+  const handleOfficialPamphletChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB restriction
+        triggerToast("Ukuran berkas pamflet kegiatan tidak boleh melebihi 2MB", "error");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const b64 = reader.result as string;
+        setDraftPamphlet(b64);
+        triggerToast("Pamflet kegiatan berhasil dimuat. Silakan klik tombol Simpan untuk memublikasikannya!", "success");
+      };
+      reader.onerror = () => {
+        triggerToast("Gagal mengunggah pamflet kegiatan", "error");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveOfficialPamphlet = () => {
+    setOfficialPamphlet(draftPamphlet);
+    triggerToast("Pamflet kegiatan kaderisasi resmi berhasil disimpan dan langsung terintegrasi ke seluruh sistem!", "success");
+  };
+
+  const handleRemoveOfficialPamphlet = () => {
+    if (confirm("Apakah Anda yakin ingin menghapus pamflet kegiatan kaderisasi resmi ini?")) {
+      setDraftPamphlet("");
+      setOfficialPamphlet("");
+      triggerToast("Brosur/Pamflet kegiatan resmi dicabut dari sistem.", "success");
+    }
+  };
+
+  const handleDownloadPDF = (filteredArray: Registrant[]) => {
+    try {
+      if (!filteredArray || filteredArray.length === 0) {
+        triggerToast("Tidak ada data calon anggota untuk diunduh.", "error");
+        return;
+      }
+
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      // Headers of GP Ansor
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(15);
+      doc.setTextColor(11, 115, 61); // Emerald green for GP Ansor branding
+      doc.text("GERAKAN PEMUDA ANSOR KABUPATEN BOGOR", 14, 20);
+      
+      doc.setFontSize(9.5);
+      doc.setFont("Helvetica", "normal");
+      doc.setTextColor(80, 80, 80);
+      doc.text("Pimpinan Cabang GP Ansor Kabupaten Bogor, Jawa Barat", 14, 25);
+      doc.text("Sistem Informasi Digital Keanggotaan & Administrasi Calon Kader Baru", 14, 29);
+      
+      // Divider
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.4);
+      doc.line(14, 32, 196, 32);
+
+      // Title
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(30, 41, 59); // Slate-900
+      doc.text("LAPORAN DATA PENERIMAAN CALON ANGGOTA", 14, 40);
+
+      // Metadata info box styling
+      doc.setFont("Helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Tanggal Cetak: ${new Date().toLocaleString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })} WIB`, 14, 46);
+      doc.text(`Total Calon Anggota: ${filteredArray.length} Orang`, 14, 51);
+      
+      const currentFilters = [];
+      if (registrantFilterDistrict) currentFilters.push(`Kecamatan: ${registrantFilterDistrict}`);
+      if (registrantFilterStatus !== "all") currentFilters.push(`Status: ${registrantFilterStatus.toUpperCase()}`);
+      if (registrantSearch) currentFilters.push(`Kata Kunci: "${registrantSearch}"`);
+      const filterText = currentFilters.join(", ") || "Semua Data";
+      doc.text(`Filter Terpasang: ${filterText}`, 14, 56);
+
+      // Set up the table data
+      const tableHeaders = [["No", "ID CAD", "Tgl Terdaftar", "Nama Lengkap", "NIK", "Domisili", "WhatsApp", "Status"]];
+      const tableBody = filteredArray.map((row, index) => [
+        (index + 1).toString(),
+        row.id,
+        new Date(row.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+        row.name,
+        row.nik,
+        `Kec. ${row.district}`,
+        row.whatsapp,
+        row.status.toUpperCase()
+      ]);
+
+      autoTable(doc, {
+        startY: 61,
+        head: tableHeaders,
+        body: tableBody,
+        theme: "striped",
+        headStyles: {
+          fillColor: [11, 115, 61], // Ansor emerald gold
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 8.5
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: [40, 40, 40]
+        },
+        columnStyles: {
+          0: { cellWidth: 8, halign: "center" },
+          1: { cellWidth: 20, fontStyle: "bold" },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 35, fontStyle: "bold" },
+          4: { cellWidth: 30 },
+          5: { cellWidth: 32 },
+          6: { cellWidth: 25 },
+          7: { cellWidth: 16, fontStyle: "bold", halign: "center" }
+        },
+        didParseCell: (data) => {
+          if (data.column.index === 7 && data.cell.section === "body") {
+            const statusVal = data.cell.text[0];
+            if (statusVal === "APPROVED") {
+              data.cell.styles.textColor = [16, 122, 16]; // Deep Green
+            } else if (statusVal === "PENDING") {
+              data.cell.styles.textColor = [190, 110, 10]; // Amber
+            } else if (statusVal === "REJECTED") {
+              data.cell.styles.textColor = [185, 28, 28]; // Red
+            }
+          }
+        },
+        styles: {
+          cellPadding: 2,
+          valign: "middle"
+        }
+      });
+
+      // Footer template
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7.5);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          "Sistem Informasi Digital Administrasi & Keanggotaan PC GP Ansor Kabupaten Bogor",
+          14,
+          287
+        );
+        doc.text(
+          `Halaman ${i} dari ${pageCount}`,
+          196,
+          287,
+          { align: "right" }
+        );
+      }
+
+      const fileDate = new Date().toISOString().slice(0, 10);
+      doc.save(`Calon_Anggota_GP_Ansor_Bogor_${fileDate}.pdf`);
+      triggerToast("Laporan PDF Calon Anggota berhasil diunduh!", "success");
+    } catch (error: any) {
+      console.error("PDF download failed:", error);
+      triggerToast(`Gagal mengunduh PDF: ${error.message || error}`, "error");
+    }
+  };
+
   const cancelEdit = () => {
     setEditingId(null);
     setIsCreating(false);
@@ -1144,6 +1444,7 @@ export default function CMSDashboard() {
               { key: "general" as const, label: "Branding & Hero", icon: Sparkles, alwaysActive: true },
               { key: "about" as const, label: "Tentang & Pilar", icon: Compass },
               { key: "programs" as const, label: "Program Kerja", icon: LayoutGrid },
+              { key: "registrants" as const, label: "Calon Anggota", icon: ShieldCheck, alwaysActive: true },
               { key: "news" as const, label: "Berita (News)", icon: FileText },
               { key: "gallery" as const, label: "Galeri Kegiatan", icon: ImageIcon },
               { key: "leaders" as const, label: "Dewan Pimpinan", icon: Users },
@@ -4550,6 +4851,694 @@ export default function CMSDashboard() {
 
             </div>
           )}
+
+          {/* --- 11. REGISTRANTS REVIEW MENU --- */}
+          {activeTab === "registrants" && (() => {
+            const getWhatsAppCleanUrl = (phone: string, name: string) => {
+              let clean = phone.replace(/\D/g, "");
+              if (clean.startsWith("0")) {
+                clean = "62" + clean.slice(1);
+              } else if (clean.startsWith("8")) {
+                clean = "62" + clean;
+              }
+              const message = encodeURIComponent(`Assalamu'alaikum Wr. Wb., Sahabat ${name}! Saya dari PC GP Ansor Kabupaten Bogor berkait pendaftaran Anda.`);
+              return `https://wa.me/${clean}?text=${message}`;
+            };
+
+            const filteredRegistrants = registrantsData.filter((r) => {
+              const matchesSearch = r.name.toLowerCase().includes(registrantSearch.toLowerCase()) || 
+                                    r.nik.includes(registrantSearch) || 
+                                    r.whatsapp.includes(registrantSearch);
+              const matchesDistrict = !registrantFilterDistrict || r.district === registrantFilterDistrict;
+              const matchesStatus = registrantFilterStatus === "all" || r.status === registrantFilterStatus;
+              return matchesSearch && matchesDistrict && matchesStatus;
+            });
+
+            const totalCandidates = registrantsData.length;
+            const pendingCandidates = registrantsData.filter(r => r.status === 'pending').length;
+            const approvedCandidates = registrantsData.filter(r => r.status === 'approved').length;
+            const rejectedCandidates = registrantsData.filter(r => r.status === 'rejected').length;
+
+            const BOGOR_DISTRICTS = [
+              "Babakan Madang", "Bo Jong Gede", "Caringin", "Cariu", "Ciampea", "Ciawi", "Cibinong", "Cibungbulang", "Cigombong", "Cigudeg", "Cijeruk", "Cileungsi", "Ciomas", "Cisarua", "Ciseeng", "Citeureup", "Dramaga", "Gunung Putri", "Gunung Sindur", "Jasinga", "Jonggol", "Kemang", "Klapanunggal", "Leuwiliang", "Leuwisadeng", "Megamendung", "Nanggung", "Pamijahan", "Parung Panjang", "Parung", "Ranca Bungur", "Rumpin", "Sukajaya", "Sukamakmur", "Sukaraja", "Tajur Halang", "Tamansari", "Tenjo", "Tenjolaya"
+            ];
+
+            return (
+              <div className="space-y-6">
+                
+                {/* Header Information */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/5 pb-5">
+                  <div className="space-y-1 text-left">
+                    <h2 className="text-xl font-bold font-display text-white tracking-tight flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-ansor-gold" />
+                      Kelola & Penerimaan Calon Anggota
+                    </h2>
+                    <p className="text-neutral-400 text-xs font-medium font-sans">
+                      Catat, review, approved, atau tolak pendaftaran kader baru GP Ansor Kabupaten Bogor secara manual.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDownloadPDF(filteredRegistrants)}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md hover:scale-[1.01] cursor-pointer"
+                    title="Ekspor daftar calon anggota yang tampil saat ini ke file PDF"
+                  >
+                    <Download className="w-4 h-4 text-emerald-205" />
+                    Unduh Laporan PDF
+                  </button>
+                </div>
+
+                {/* Dashboard KPI Mini Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-[#021408]/40 border border-white/10 rounded-2xl p-4 flex flex-col justify-between text-left shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400 text-[10px] uppercase font-mono tracking-wider font-extrabold font-sans">Total Pelamar</span>
+                      <Users className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div className="mt-2.5">
+                      <p className="text-2xl font-black text-white font-display">{totalCandidates}</p>
+                      <p className="text-[10px] text-neutral-500 font-sans mt-0.5">Sudah terdaftar di sistem</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#021408]/40 border border-amber-500/20 rounded-2xl p-4 flex flex-col justify-between text-left shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-1.5 h-full bg-amber-500/60" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-amber-300 text-[10px] uppercase font-mono tracking-wider font-extrabold font-sans">Menunggu (Pending)</span>
+                      <Shield className="w-4 h-4 text-amber-500 animate-pulse" />
+                    </div>
+                    <div className="mt-2.5">
+                      <p className="text-2xl font-black text-amber-500 font-display">{pendingCandidates}</p>
+                      <p className="text-[10px] text-neutral-500 font-sans mt-0.5 font-sans">Membutuhkan persetujuan</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#021408]/40 border border-emerald-500/20 rounded-2xl p-4 flex flex-col justify-between text-left shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-1.5 h-full bg-emerald-500/60" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-emerald-300 text-[10px] uppercase font-mono tracking-wider font-extrabold font-sans">Telah Disetujui</span>
+                      <UserCheck className="w-4 h-4 text-emerald-500" />
+                    </div>
+                    <div className="mt-2.5">
+                      <p className="text-2xl font-black text-emerald-400 font-display">{approvedCandidates}</p>
+                      <p className="text-[10px] text-neutral-500 font-sans mt-0.5 font-sans">CAD aktif diterbitkan</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#021408]/40 border border-red-500/20 rounded-2xl p-4 flex flex-col justify-between text-left shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-1.5 h-full bg-red-500/60" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-red-300 text-[10px] uppercase font-mono tracking-wider font-extrabold font-sans">Ditolak / Arsip</span>
+                      <X className="w-4 h-4 text-red-500" />
+                    </div>
+                    <div className="mt-2.5">
+                      <p className="text-2xl font-black text-red-400 font-display">{rejectedCandidates}</p>
+                      <p className="text-[10px] text-neutral-500 font-sans mt-0.5 font-sans">Tidak disetujui / Diarsipkan</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Warning Banner Information */}
+                <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-4 text-left flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-ansor-gold shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-emerald-400 font-display">Informasi Alur Pendaftaran & KTA</p>
+                    <p className="text-[11px] text-neutral-300/90 leading-relaxed font-sans">
+                      Aplikasi tidak langsung menyetujui CAD secara otomatis secara default. Admin membutuhkan waktu mengonfirmasi keaslian identitas. <span className="text-ansor-gold font-bold">Setelah disetujui, harap arahkan calon anggota untuk mengunduh aplikasi resmi KTA Ansor</span> di Google Play Store lewat tombol WhatsApp di bawah ini guna memproses Kartu Tanda Anggota utama mereka secara nasional.
+                    </p>
+                  </div>
+                </div>
+
+                {/* SUB-TAB NAVIGATOR */}
+                <div className="flex border-b border-white/5 gap-1.5 mt-2 overflow-x-auto">
+                  <button
+                    type="button"
+                    onClick={() => setRegistrantSubTab("all")}
+                    className={`px-5 py-3 text-xs uppercase tracking-wider font-bold transition-all border-b-2 font-mono flex items-center gap-2 cursor-pointer shrink-0 ${
+                      registrantSubTab === "all"
+                        ? "border-ansor-gold text-white bg-white/5 rounded-t-xl"
+                        : "border-transparent text-neutral-400 hover:text-white hover:bg-white/5 rounded-t-xl"
+                    }`}
+                  >
+                    <Users className="w-4 h-4 text-emerald-400" />
+                    Database Umum Calon Anggota
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRegistrantSubTab("kaderisasi")}
+                    className={`px-5 py-3 text-xs uppercase tracking-wider font-bold transition-all border-b-2 font-mono flex items-center gap-2 cursor-pointer shrink-0 ${
+                      registrantSubTab === "kaderisasi"
+                        ? "border-ansor-gold text-white bg-white/5 rounded-t-xl"
+                        : "border-transparent text-neutral-400 hover:text-white hover:bg-white/5 rounded-t-xl"
+                    }`}
+                  >
+                    <Award className="w-4 h-4 text-amber-500" />
+                    Rekap Pendaftaran Kaderisasi Resmi
+                  </button>
+                </div>
+
+                {registrantSubTab === "all" ? (
+                  <>
+                    {/* Filter and Search Bar controls */}
+                    <div className="bg-[#021408]/30 border border-white/5 rounded-2xl p-4 space-y-4 lg:space-y-0 lg:flex lg:items-center lg:gap-4">
+                      <div className="flex-1 text-left">
+                        <label className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 block mb-1 font-bold font-sans">Cari Berdasarkan Nama, NIK, atau WhatsApp</label>
+                        <input
+                          type="text"
+                          value={registrantSearch}
+                          onChange={(e) => setRegistrantSearch(e.target.value)}
+                          placeholder="Ketik nama atau nomor identitas..."
+                          className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:border-emerald-500 focus:outline-none transition-all font-medium font-sans"
+                        />
+                      </div>
+
+                      <div className="w-full lg:w-56 text-left">
+                        <label className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 block mb-1 font-bold font-sans">Filter Kecamatan</label>
+                        <select
+                          value={registrantFilterDistrict}
+                          onChange={(e) => setRegistrantFilterDistrict(e.target.value)}
+                          className="w-full bg-[#020d04] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none transition-all font-semibold font-sans cursor-pointer"
+                        >
+                          <option value="">Semua Kecamatan</option>
+                          {BOGOR_DISTRICTS.map((dist) => (
+                            <option key={dist} value={dist}>{dist}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="w-full lg:w-48 text-left">
+                        <label className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 block mb-1 font-bold font-sans">Status Persetujuan</label>
+                        <select
+                          value={registrantFilterStatus}
+                          onChange={(e) => setRegistrantFilterStatus(e.target.value as any)}
+                          className="w-full bg-[#020d04] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none transition-all font-semibold font-sans cursor-pointer"
+                        >
+                          <option value="all">Semua Status</option>
+                          <option value="pending">Menunggu (Pending)</option>
+                          <option value="approved">Disetujui (Approved)</option>
+                          <option value="rejected">Ditolak (Rejected)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Table and Candidate List */}
+                    <div className="bg-[#021408]/40 border border-white/10 rounded-2xl overflow-hidden shadow-lg">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[700px]">
+                          <thead>
+                            <tr className="border-b border-white/5 bg-[#021307] text-neutral-400 text-[10px] tracking-wider uppercase font-mono font-bold">
+                              <th className="px-5 py-4 w-[160px]">Tanggal Daftar</th>
+                              <th className="px-5 py-4">Data Calon Anggota</th>
+                              <th className="px-5 py-4">Kecamatan Domisili</th>
+                              <th className="px-5 py-4">Alasan Bergabung</th>
+                              <th className="px-5 py-4 text-center w-[150px]">Status</th>
+                              <th className="px-5 py-4 text-right w-[180px]">Kelola Persetujuan</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5 font-sans">
+                            {filteredRegistrants.length === 0 ? (
+                              <tr>
+                                <td colSpan={6} className="px-5 py-12 text-center text-xs text-neutral-500 font-medium font-sans">
+                                  Tidak ada calon anggota yang cocok dengan filter pencarian Anda.
+                                </td>
+                              </tr>
+                            ) : (
+                              filteredRegistrants.map((registrant) => (
+                                <tr key={registrant.id} className="hover:bg-white/5 transition-colors text-white text-xs align-top">
+                                  <td className="px-5 py-4 font-mono text-[11px] text-neutral-400 font-bold leading-relaxed">
+                                    {new Date(registrant.createdAt).toLocaleDateString("id-ID", {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit"
+                                    })}
+                                  </td>
+                                  <td className="px-5 py-4 space-y-1.5 text-left">
+                                    <div className="space-y-0.5">
+                                      <p className="font-extrabold text-white text-xs sm:text-sm capitalize font-display tracking-tight flex items-center gap-1.5">
+                                        <User className="w-3.5 h-3.5 text-emerald-400" />
+                                        {registrant.name}
+                                      </p>
+                                      <p className="text-[10px] text-neutral-404 font-mono tracking-wider uppercase">NIK: {registrant.nik}</p>
+                                    </div>
+                                    <div className="space-y-1 text-neutral-300 text-[11px]">
+                                      <p className="flex items-center gap-1 font-medium font-sans">Email: {registrant.email}</p>
+                                      <a
+                                        href={getWhatsAppCleanUrl(registrant.whatsapp, registrant.name)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[9px] px-2.5 py-0.5 rounded-full transition-all tracking-wider font-mono shadow-xs hover:scale-[1.02]"
+                                      >
+                                        <Phone className="w-2.5 h-2.5 fill-current" />
+                                        WA: {registrant.whatsapp}
+                                      </a>
+                                    </div>
+
+                                    {registrant.registrationType === "kaderisasi" && (
+                                      <div className="mt-2 pt-2 border-t border-white/5 space-y-1.5 text-[11px] text-neutral-300">
+                                        <div className="flex flex-wrap gap-1">
+                                          <span className="bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[9px] font-bold rounded-full px-2 py-0.5 tracking-wider uppercase font-mono">
+                                            Calon Kader GP Ansor
+                                          </span>
+                                          {registrant.ukuranKaos && (
+                                            <span className="bg-[#10b981]/10 text-[#34d399] border border-emerald-500/20 text-[9px] font-bold rounded-full px-2 py-0.5 tracking-wider uppercase font-mono">
+                                              Kaos: {registrant.ukuranKaos}
+                                            </span>
+                                          )}
+                                          {registrant.pendidikanAkhir && (
+                                            <span className="bg-white/5 text-neutral-300 border border-white/10 text-[9px] font-bold rounded-full px-2 py-0.5 tracking-wider uppercase font-mono">
+                                              Pndk: {registrant.pendidikanAkhir}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="space-y-0.5 text-[10px] text-neutral-404 font-sans">
+                                          <p>
+                                            TTL: <span className="text-neutral-200 font-semibold">{registrant.tempatLahir}, {registrant.tanggalLahir}</span>
+                                          </p>
+                                          <p>
+                                            Alamat: <span className="text-neutral-200 font-semibold">Desa {registrant.desa}, {registrant.kabupaten}</span>
+                                          </p>
+                                          {registrant.pekerjaan && (
+                                            <p>
+                                              Pekerjaan: <span className="text-neutral-200 font-semibold">{registrant.pekerjaan}</span>
+                                            </p>
+                                          )}
+                                          {registrant.pendidikanPesantren && (
+                                            <p>
+                                              Pesantren: <span className="text-neutral-350 italic">"{registrant.pendidikanPesantren}"</span>
+                                            </p>
+                                          )}
+                                        </div>
+                                        
+                                        {/* PAMFLET KEGIATAN PREVIEW */}
+                                        {registrant.pamfletFile ? (
+                                          <div className="mt-2 p-1.5 bg-[#010903] border border-white/10 rounded-lg max-w-[200px]">
+                                            <p className="text-[9px] font-bold text-amber-400 tracking-wider uppercase font-mono mb-1">
+                                              Pamflet Kegiatan:
+                                            </p>
+                                            <div className="flex gap-2 items-center">
+                                              <a 
+                                                href={registrant.pamfletFile} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="relative block w-10 h-10 rounded-md overflow-hidden bg-white hover:opacity-90 shrink-0 border border-white/10"
+                                                title="Click to view full image in a new tab"
+                                              >
+                                                <img
+                                                  src={registrant.pamfletFile}
+                                                  alt="Pamflet Kegiatan"
+                                                  referrerPolicy="no-referrer"
+                                                  className="w-full h-full object-cover"
+                                                />
+                                              </a>
+                                              <div className="flex flex-col text-left">
+                                                <span className="text-[9px] text-[#34d399] font-bold font-mono">pamflet.png</span>
+                                                <a
+                                                  href={registrant.pamfletFile}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="text-[8px] text-[#34d399] hover:underline font-bold font-mono transition-all block mt-0.5"
+                                                >
+                                                  Buka Penuh ↗
+                                                </a>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <p className="text-[9px] text-neutral-500 italic mt-1 font-sans">
+                                            (Belum ada pamflet kegiatan diupload)
+                                          </p>
+                                        )}
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="px-5 py-4">
+                                    <span className="inline-flex items-center gap-1 bg-[#10b981]/10 text-emerald-400 border border-emerald-500/20 rounded-full px-2.5 py-1 font-bold text-[10px] uppercase font-mono">
+                                      <MapPin className="w-3 h-3 text-ansor-gold" />
+                                      Kec. {registrant.district}
+                                    </span>
+                                  </td>
+                                  <td className="px-5 py-4 max-w-xs text-neutral-350 leading-relaxed text-[11px] font-sans">
+                                    {registrant.reason || (
+                                      <span className="text-neutral-500 italic">Tidak menulis alasan khusus.</span>
+                                    )}
+                                  </td>
+                                  <td className="px-5 py-4 text-center">
+                                    {registrant.status === "pending" && (
+                                      <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-400 border border-amber-500/40 px-2.5 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider font-mono animate-pulse">
+                                        <Activity className="w-3 h-3 animate-pulse" />
+                                        PENDING
+                                      </span>
+                                    )}
+                                    {registrant.status === "approved" && (
+                                      <span className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider font-mono">
+                                        <UserCheck className="w-3 h-3" />
+                                        APPROVED
+                                      </span>
+                                    )}
+                                    {registrant.status === "rejected" && (
+                                      <span className="inline-flex items-center gap-1.5 bg-[#ef4444]/20 text-[#fca5a5] border border-[#f87171]/40 px-2.5 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider font-mono">
+                                        <X className="w-3 h-3" />
+                                        REJECTED
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="px-5 py-4 text-right">
+                                    <div className="flex flex-col gap-1.5 items-end">
+                                      <div className="flex gap-1.5">
+                                        {registrant.status !== "approved" && (
+                                          <button
+                                            onClick={() => handleApproveRegistrant(registrant.id)}
+                                            className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold p-1.5 rounded-lg border border-emerald-600 cursor-pointer shadow-sm transition-all"
+                                            title="Setujui Pelamar"
+                                          >
+                                            <Check className="w-3.5 h-3.5" />
+                                          </button>
+                                        )}
+                                        {registrant.status !== "rejected" && (
+                                          <button
+                                            onClick={() => handleRejectRegistrant(registrant.id)}
+                                            className="bg-amber-600/35 hover:bg-amber-600 font-bold p-1.5 rounded-lg border border-amber-500 text-amber-200 hover:text-white cursor-pointer shadow-sm transition-all"
+                                            title="Tolak Pelamar"
+                                          >
+                                            <X className="w-3.5 h-3.5" />
+                                          </button>
+                                        )}
+                                        <button
+                                          onClick={() => handleDeleteRegistrant(registrant.id, registrant.name)}
+                                          className="bg-red-500/20 hover:bg-red-600 text-red-300 hover:text-white p-1.5 rounded-lg border border-red-500/30 hover:border-red-600 cursor-pointer shadow-sm transition-all"
+                                          title="Hapus / Blokir"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                      <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest font-black font-sans">
+                                        ID: {registrant.id}
+                                      </span>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* SUB-TAB REKAP KADERISASI */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                      
+                      {/* Left: Upload Official Pamphlet PC GP Ansor */}
+                      <div className="lg:col-span-7 bg-[#021408]/40 border border-white/10 rounded-2xl p-5 flex flex-col justify-between text-left space-y-4">
+                        <div className="space-y-1.5">
+                          <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-1.5 font-display">
+                            <Upload className="w-4 h-4 text-ansor-gold" />
+                            Unggah Pamflet Kegiatan Kaderisasi PC GP Ansor
+                          </h3>
+                          <p className="text-neutral-400 text-[11px] font-sans">
+                            Unggah pamflet/flyer kegiatan kaderisasi resmi saat ini. Flyer yang diunggah akan langsung ditampilkan kepada calon peserta saat mereka membuka formulir pendaftaran di halaman utama website.
+                          </p>
+                        </div>
+
+                        {!draftPamphlet ? (
+                          <div className="border border-dashed border-white/10 hover:border-ansor-gold rounded-xl p-6 transition-all bg-[#010903] flex flex-col items-center justify-center text-center cursor-pointer relative group">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleOfficialPamphletChange}
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            />
+                            <Upload className="w-6 h-6 text-neutral-400 group-hover:text-ansor-gold group-hover:scale-110 transition-all mb-2" />
+                            <p className="text-xs font-bold text-neutral-200">Klik / Tarik Pamflet Kegiatan ke Sini</p>
+                            <p className="text-[10px] text-neutral-500 mt-1">Format gambar: Portrait (PNG, JPG, Maksimal 2MB)</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-[#010903] border border-white/10 rounded-xl">
+                            <div className="relative w-20 h-24 rounded-lg overflow-hidden border border-white/10 bg-white shrink-0 sm:mx-0 mx-auto">
+                              <img
+                                src={draftPamphlet}
+                                alt="Official Pamphlet"
+                                referrerPolicy="no-referrer"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="flex-1 text-left space-y-2.5 w-full">
+                              <div>
+                                {draftPamphlet !== officialPamphlet ? (
+                                  <>
+                                    <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest font-mono">⚠️ Draf Belum Disimpan</p>
+                                    <p className="text-[11px] text-neutral-300 font-sans">Silakan klik tombol "Simpan Pamflet" agar aktif di formulir pendaftaran.</p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest font-mono">● Pamflet Aktif</p>
+                                    <p className="text-[11px] text-neutral-300 font-sans">Aktif terintegrasi di form pendaftar kaderisasi & pop-up utama.</p>
+                                  </>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-2 pt-1 font-sans">
+                                {draftPamphlet !== officialPamphlet && (
+                                  <button
+                                    type="button"
+                                    onClick={handleSaveOfficialPamphlet}
+                                    className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-3.5 py-2 rounded-lg transition-all font-bold cursor-pointer shadow-md"
+                                  >
+                                    <Save className="w-3.5 h-3.5" />
+                                    Simpan Pamflet
+                                  </button>
+                                )}
+                                <a
+                                  href={draftPamphlet}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 bg-white/5 hover:bg-white/10 text-white text-[10px] px-2.5 py-2 rounded-lg border border-white/10 transition-all font-bold"
+                                >
+                                  Lihat Penuh ↗
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveOfficialPamphlet}
+                                  className="inline-flex items-center gap-1 bg-red-950/40 hover:bg-red-900/60 border border-red-800/40 text-red-300 text-[10px] px-2.5 py-2 rounded-lg transition-all font-bold cursor-pointer"
+                                >
+                                  <Trash2 className="w-3 shrink-0" />
+                                  Hapus Pamflet
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Export and statistics of education */}
+                      <div className="lg:col-span-5 bg-[#021408]/40 border border-white/10 rounded-2xl p-5 flex flex-col justify-between text-left">
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-1.5 font-display">
+                            <FileText className="w-4 h-4 text-emerald-450" />
+                            Rekapitulasi Berkas Pelamar
+                          </h3>
+                          <p className="text-neutral-450 text-[11px] leading-relaxed font-sans">
+                            Gunakan tombol di bawah ini untuk mengunduh rekapitulasi data pendaftar kaderisasi resmi. Hasil unduhan berupa spreadsheet yang menampilkan seluruh kolom lengkap yang diisi oleh calon kader (NIK, Kaos, Pendidikan, Pesantren, Pekerjaan, Alamat, Golongan Darah, Status Nikah, dll).
+                          </p>
+                        </div>
+
+                        <div className="space-y-2 pt-4">
+                          <button
+                            type="button"
+                            onClick={() => downloadKaderisasiCSV(registrantsData)}
+                            className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#10b981] hover:bg-emerald-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-98 cursor-pointer"
+                            title="Unduh seluruh kolom data yang diisi peserta dalam format spreadsheet CSV/Excel"
+                          >
+                            <Download className="w-4 h-4 text-slate-950" />
+                            Unduh Rekap Lengkap (Excel / CSV)
+                          </button>
+                          
+                          <div className="text-center">
+                            <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-mono font-bold">
+                              Ekspor Data Multi-Kolom Aktif
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Table of Kaderisasi */}
+                    <div className="bg-[#021408]/40 border border-white/10 rounded-2xl overflow-hidden shadow-lg">
+                      <div className="p-4 border-b border-white/5 bg-[#010c04] flex items-center justify-between flex-wrap gap-2">
+                        <h4 className="text-xs font-bold text-emerald-400 font-mono tracking-widest uppercase flex items-center gap-1.5">
+                          <Database className="w-3.5 h-3.5 text-ansor-gold" />
+                          List Rekap Data Pendaftaran Kaderisasi GP Ansor
+                        </h4>
+                        <span className="bg-[#10b981]/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] rounded-full font-bold font-mono">
+                          {registrantsData.filter(r => r.registrationType === "kaderisasi").length} Calon Anggota
+                        </span>
+                      </div>
+                      
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[900px]">
+                          <thead>
+                            <tr className="border-b border-white/5 bg-[#021307] text-neutral-400 text-[10px] tracking-wider uppercase font-mono font-bold">
+                              <th className="px-5 py-3 w-[60px] text-center">No</th>
+                              <th className="px-5 py-3">Nama Lengkap</th>
+                              <th className="px-5 py-3 w-[150px]">Kecamatan</th>
+                              <th className="px-5 py-3 w-[150px]">Kab / Kota</th>
+                              <th className="px-5 py-3 w-[130px]">Tanggal Lahir</th>
+                              <th className="px-5 py-3 w-[90px]">Usia</th>
+                              <th className="px-5 py-3 w-[140px]">No HP / WA</th>
+                              <th className="px-5 py-3 w-[90px] text-center">Pamflet</th>
+                              <th className="px-5 py-3 w-[100px] text-center">Status</th>
+                              <th className="px-5 py-3 w-[110px] text-right">Aksi</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5 font-sans">
+                            {(() => {
+                              const kaderisasiOnly = registrantsData.filter(r => r.registrationType === "kaderisasi");
+
+                              if (kaderisasiOnly.length === 0) {
+                                return (
+                                  <tr>
+                                    <td colSpan={10} className="px-5 py-12 text-center text-xs text-neutral-500 font-medium font-sans">
+                                      Belum ada calon peserta pendaftaran kaderisasi dalam sistem.
+                                    </td>
+                                  </tr>
+                                );
+                              }
+
+                              return kaderisasiOnly.map((registrant, index) => {
+                                // Age automatically calculated: Year 2026 (local clock) minus birth year
+                                let age = "-";
+                                if (registrant.tanggalLahir) {
+                                  const birthYear = parseInt(registrant.tanggalLahir.split("-")[0]);
+                                  if (!isNaN(birthYear)) {
+                                    age = `${2026 - birthYear} Tahun`;
+                                  }
+                                }
+
+                                return (
+                                  <tr key={registrant.id} className="hover:bg-white/5 transition-colors text-white text-xs align-middle">
+                                    <td className="px-5 py-4 text-center font-mono text-[10px] text-neutral-400 font-bold">
+                                      {index + 1}
+                                    </td>
+                                    <td className="px-5 py-4 text-left">
+                                      <p className="font-extrabold text-white text-xs sm:text-sm capitalize font-display flex items-center gap-1">
+                                        <User className="w-3.5 h-3.5 text-[#34d399]" />
+                                        {registrant.name}
+                                      </p>
+                                      <p className="text-[9px] text-[#34d399] font-mono tracking-wider font-semibold capitalize mt-1">
+                                        Desa: {registrant.desa || "-"}
+                                      </p>
+                                    </td>
+                                    <td className="px-5 py-4">
+                                      <span className="font-semibold text-neutral-200">
+                                        Kec. {registrant.district}
+                                      </span>
+                                    </td>
+                                    <td className="px-5 py-4 text-neutral-300 font-medium whitespace-nowrap">
+                                      {registrant.kabupaten || "Kabupaten Bogor"}
+                                    </td>
+                                    <td className="px-5 py-4 font-mono text-[11px] text-neutral-300">
+                                      {registrant.tanggalLahir ? (
+                                        new Date(registrant.tanggalLahir).toLocaleDateString("id-ID", {
+                                          day: "numeric",
+                                          month: "short",
+                                          year: "numeric"
+                                        })
+                                      ) : "-"}
+                                    </td>
+                                    <td className="px-5 py-4 font-bold text-amber-400 font-mono text-[11px]">
+                                      {age}
+                                    </td>
+                                    <td className="px-5 py-4 text-left">
+                                      <a
+                                        href={getWhatsAppCleanUrl(registrant.whatsapp, registrant.name)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[9px] px-3 py-1 rounded-full transition-all tracking-wider font-mono shadow-sm"
+                                        title="Chat WhatsApp calon kader"
+                                      >
+                                        <Phone className="w-2.5 h-2.5 fill-current" />
+                                        {registrant.whatsapp}
+                                      </a>
+                                    </td>
+                                    <td className="px-5 py-4 text-center">
+                                      {registrant.pamfletFile ? (
+                                        <div className="flex justify-center">
+                                          <a 
+                                            href={registrant.pamfletFile} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="relative block w-8 h-8 rounded border border-white/10 hover:border-ansor-gold overflow-hidden"
+                                            title="Click to view brochure"
+                                          >
+                                            <img src={registrant.pamfletFile} alt="pamflet" className="w-full h-full object-cover" />
+                                          </a>
+                                        </div>
+                                      ) : (
+                                        <span className="text-neutral-500 text-[10px] italic">Tidak ada</span>
+                                      )}
+                                    </td>
+                                    <td className="px-5 py-4 text-center">
+                                      {registrant.status === "pending" && (
+                                        <span className="inline-flex items-center gap-1 bg-amber-500/15 text-amber-400 border border-amber-500/35 px-2 py-0.5 rounded-full font-bold text-[9px] uppercase font-mono">
+                                          PENDING
+                                        </span>
+                                      )}
+                                      {registrant.status === "approved" && (
+                                        <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-450 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold text-[9px] uppercase font-mono">
+                                          DISETUJUI
+                                        </span>
+                                      )}
+                                      {registrant.status === "rejected" && (
+                                        <span className="inline-flex items-center gap-1 bg-red-500/15 text-red-350 border border-red-500/30 px-2 py-0.5 rounded-full font-bold text-[9px] uppercase font-mono">
+                                          DITOLAK
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="px-5 py-4 text-right">
+                                      <div className="flex items-center justify-end gap-1">
+                                        {registrant.status !== "approved" && (
+                                          <button
+                                            onClick={() => handleApproveRegistrant(registrant.id)}
+                                            className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold p-1 rounded-md border border-emerald-600 cursor-pointer shadow-sm transition-all"
+                                            title="Setujui Pelamar"
+                                          >
+                                            <Check className="w-3 h-3" />
+                                          </button>
+                                        )}
+                                        {registrant.status !== "rejected" && (
+                                          <button
+                                            onClick={() => handleRejectRegistrant(registrant.id)}
+                                            className="bg-amber-600/35 hover:bg-amber-600 font-bold p-1 rounded-md border border-amber-550 text-amber-100 hover:text-white cursor-pointer shadow-sm transition-all"
+                                            title="Tolak Pelamar"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        )}
+                                        <button
+                                          onClick={() => handleDeleteRegistrant(registrant.id, registrant.name)}
+                                          className="bg-red-500/20 hover:bg-red-600 text-red-300 hover:text-white p-1 rounded-md border border-red-500/30 cursor-pointer shadow-sm transition-all"
+                                          title="Hapus"
+                                        >
+                                          <Trash2 className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              });
+                            })()}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+              </div>
+            );
+          })()}
 
         </main>
       </div>

@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { 
   ProgramItem, NewsArticle, TeamMember, GalleryItem, FAQItem,
   AboutConfig, StrategicPillar, ImpactStat, ContactConfig, MenuStatus,
-  DigitalServicesState, DigitalServiceConfig, CMSUser, MenuLabels, KaderisasiRow, AdsConfig
+  DigitalServicesState, DigitalServiceConfig, CMSUser, MenuLabels, KaderisasiRow, AdsConfig,
+  Registrant
 } from "../types";
 import { PROGRAMS, NEWS, LEADERS, GALLERY, FAQS } from "../data";
 import { getSupabaseCMSData, setSupabaseCMSData } from "../lib/supabase";
@@ -59,6 +60,14 @@ interface CMSContextType {
   // Recruitment/Training data state
   kaderisasiData: KaderisasiRow[];
   setKaderisasiData: (rows: KaderisasiRow[]) => void;
+
+  // Registrants/Calon Anggota database
+  registrantsData: Registrant[];
+  setRegistrantsData: (rows: Registrant[]) => void;
+
+  // Official Pamphlet state for Kaderisasi Form
+  officialPamphlet: string;
+  setOfficialPamphlet: (pamphlet: string) => void;
 
   // Advertisement Banner Configuration
   adsConfig: AdsConfig;
@@ -359,6 +368,31 @@ const defaultKaderisasiRows: KaderisasiRow[] = [
   }
 ];
 
+const defaultRegistrants: Registrant[] = [
+  {
+    id: "ANSOR-108247",
+    name: "Ahmad Jalaludin",
+    nik: "3201011212890003",
+    email: "ahmad.jalal@gmail.com",
+    whatsapp: "081298765432",
+    district: "Cibinong",
+    reason: "Ingin berkontribusi aktif melestarikan kearifan lokal Aswaja dan berpartisipasi menjaga stabilitas daerah dalam barisan GP Ansor.",
+    status: "pending",
+    createdAt: "2026-06-02T05:14:00Z"
+  },
+  {
+    id: "ANSOR-492723",
+    name: "Muhammad Fikri",
+    nik: "3201021503920005",
+    email: "fikri.m@yahoo.com",
+    whatsapp: "085698761234",
+    district: "Megamendung",
+    reason: "Menjalani panggilan hati membela Ulama dan keutuhan NKRI.",
+    status: "pending",
+    createdAt: "2026-06-02T07:22:00Z"
+  }
+];
+
 const CMSContext = createContext<CMSContextType | undefined>(undefined);
 
 export function CMSProvider({ children }: { children: React.ReactNode }) {
@@ -405,6 +439,14 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
 
   // Kaderisasi Data State
   const [kaderisasiData, setKaderisasiDataState] = useState<KaderisasiRow[]>(defaultKaderisasiRows);
+
+  // Registrants Data State
+  const [registrantsData, setRegistrantsDataState] = useState<Registrant[]>(defaultRegistrants);
+
+  // Official Pamphlet state
+  const [officialPamphlet, setOfficialPamphletState] = useState<string>(() => {
+    return localStorage.getItem("ansor_bogor_official_kaderisasi_pamphlet") || "";
+  });
 
   // Load from local storage and sync with Supabase on mount
   useEffect(() => {
@@ -457,6 +499,12 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
 
       const storedKaderisasi = localStorage.getItem("ansor_bogor_kaderisasi");
       if (storedKaderisasi) setKaderisasiDataState(JSON.parse(storedKaderisasi));
+
+      const storedRegistrants = localStorage.getItem("ansor_bogor_registrants");
+      if (storedRegistrants) setRegistrantsDataState(JSON.parse(storedRegistrants));
+
+      const storedPamphlet = localStorage.getItem("ansor_bogor_official_kaderisasi_pamphlet");
+      if (storedPamphlet) setOfficialPamphletState(storedPamphlet);
     } catch (e) {
       console.error("Local storage initialization failed:", e);
     }
@@ -536,6 +584,14 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         if (dbData["ansor_bogor_kaderisasi"]) {
           setKaderisasiDataState(dbData["ansor_bogor_kaderisasi"]);
           localStorage.setItem("ansor_bogor_kaderisasi", JSON.stringify(dbData["ansor_bogor_kaderisasi"]));
+        }
+        if (dbData["ansor_bogor_registrants"]) {
+          setRegistrantsDataState(dbData["ansor_bogor_registrants"]);
+          localStorage.setItem("ansor_bogor_registrants", JSON.stringify(dbData["ansor_bogor_registrants"]));
+        }
+        if (dbData["ansor_bogor_official_kaderisasi_pamphlet"]) {
+          setOfficialPamphletState(dbData["ansor_bogor_official_kaderisasi_pamphlet"]);
+          localStorage.setItem("ansor_bogor_official_kaderisasi_pamphlet", dbData["ansor_bogor_official_kaderisasi_pamphlet"]);
         }
       } catch (err) {
         console.error("Async Supabase data load failed:", err);
@@ -642,6 +698,18 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     setSupabaseCMSData("ansor_bogor_kaderisasi", newVal);
   };
 
+  const setRegistrantsData = (newVal: Registrant[]) => {
+    setRegistrantsDataState(newVal);
+    localStorage.setItem("ansor_bogor_registrants", JSON.stringify(newVal));
+    setSupabaseCMSData("ansor_bogor_registrants", newVal);
+  };
+
+  const setOfficialPamphlet = (newVal: string) => {
+    setOfficialPamphletState(newVal);
+    localStorage.setItem("ansor_bogor_official_kaderisasi_pamphlet", newVal);
+    setSupabaseCMSData("ansor_bogor_official_kaderisasi_pamphlet", newVal);
+  };
+
   // Helper method to publish all current values to Supabase at once (useful for initial seeding)
   const publishAllToSupabase = async () => {
     try {
@@ -661,7 +729,9 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         { k: "ansor_bogor_digital_services", v: digitalServices },
         { k: "ansor_bogor_menu_labels", v: menuLabels },
         { k: "ansor_bogor_users", v: users },
-        { k: "ansor_bogor_kaderisasi", v: kaderisasiData }
+        { k: "ansor_bogor_kaderisasi", v: kaderisasiData },
+        { k: "ansor_bogor_registrants", v: registrantsData },
+        { k: "ansor_bogor_official_kaderisasi_pamphlet", v: officialPamphlet }
       ];
 
       let successCount = 0;
@@ -712,6 +782,8 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       setMenuLabelsState(defaultMenuLabels);
       setUsersState(defaultUsers);
       setKaderisasiDataState(defaultKaderisasiRows);
+      setRegistrantsDataState(defaultRegistrants);
+      setOfficialPamphletState("");
 
       localStorage.removeItem("ansor_bogor_hero");
       localStorage.removeItem("ansor_bogor_about");
@@ -729,6 +801,8 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("ansor_bogor_menu_labels");
       localStorage.removeItem("ansor_bogor_users");
       localStorage.removeItem("ansor_bogor_kaderisasi");
+      localStorage.removeItem("ansor_bogor_registrants");
+      localStorage.removeItem("ansor_bogor_official_kaderisasi_pamphlet");
 
       // Silently set back defaults on Supabase as well
       setSupabaseCMSData("ansor_bogor_hero", defaultHeroConfig);
@@ -747,6 +821,8 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       setSupabaseCMSData("ansor_bogor_menu_labels", defaultMenuLabels);
       setSupabaseCMSData("ansor_bogor_users", defaultUsers);
       setSupabaseCMSData("ansor_bogor_kaderisasi", defaultKaderisasiRows);
+      setSupabaseCMSData("ansor_bogor_registrants", defaultRegistrants);
+      setSupabaseCMSData("ansor_bogor_official_kaderisasi_pamphlet", "");
       
       alert("Konten berhasil di-reset kembali ke bawaan sistem!");
     }
@@ -787,6 +863,10 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         setUsers,
         kaderisasiData,
         setKaderisasiData,
+        registrantsData,
+        setRegistrantsData,
+        officialPamphlet,
+        setOfficialPamphlet,
         resetToDefault,
         publishAllToSupabase,
         isCmsOpen,
