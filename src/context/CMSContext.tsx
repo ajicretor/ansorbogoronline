@@ -6,7 +6,7 @@ import {
   Registrant
 } from "../types";
 import { PROGRAMS, NEWS, LEADERS, GALLERY, FAQS } from "../data";
-import { getSupabaseCMSData, setSupabaseCMSData } from "../lib/supabase";
+import { supabase, getSupabaseCMSData, setSupabaseCMSData } from "../lib/supabase";
 
 export interface HeroConfig {
   titleLine1: string;
@@ -76,6 +76,7 @@ interface CMSContextType {
   // High-level Actions
   resetToDefault: () => void;
   publishAllToSupabase: () => Promise<{ success: boolean; message: string }>;
+  syncFromSupabase: () => Promise<boolean>;
   isCmsOpen: boolean;
   setIsCmsOpen: (open: boolean) => void;
   theme: "light" | "dark";
@@ -451,6 +452,97 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     return localStorage.getItem("ansor_bogor_official_kaderisasi_pamphlet") || "";
   });
 
+  // 2. Load fresh data from Supabase asynchronously in background and cache it
+  const syncFromSupabase = async (): Promise<boolean> => {
+    try {
+      const dbData = await getSupabaseCMSData();
+      if (!dbData) {
+        console.log("Supabase table 'ansor_bogor_cms' is not queried (probably empty or table doesn't exist yet).");
+        return false;
+      }
+
+      console.log("Successfully fetched fresh database content from Supabase, syncing frontend...");
+
+      if (dbData["ansor_bogor_hero"]) {
+        setHeroConfigState(dbData["ansor_bogor_hero"]);
+        localStorage.setItem("ansor_bogor_hero", JSON.stringify(dbData["ansor_bogor_hero"]));
+      }
+      if (dbData["ansor_bogor_about"]) {
+        setAboutConfigState(dbData["ansor_bogor_about"]);
+        localStorage.setItem("ansor_bogor_about", JSON.stringify(dbData["ansor_bogor_about"]));
+      }
+      if (dbData["ansor_bogor_pillars"]) {
+        setStrategicPillarsState(dbData["ansor_bogor_pillars"]);
+        localStorage.setItem("ansor_bogor_pillars", JSON.stringify(dbData["ansor_bogor_pillars"]));
+      }
+      if (dbData["ansor_bogor_stats"]) {
+        setImpactStatsState(dbData["ansor_bogor_stats"]);
+        localStorage.setItem("ansor_bogor_stats", JSON.stringify(dbData["ansor_bogor_stats"]));
+      }
+      if (dbData["ansor_bogor_contact"]) {
+        setContactConfigState(dbData["ansor_bogor_contact"]);
+        localStorage.setItem("ansor_bogor_contact", JSON.stringify(dbData["ansor_bogor_contact"]));
+      }
+      if (dbData["ansor_bogor_ads"]) {
+        setAdsConfigState(dbData["ansor_bogor_ads"]);
+        localStorage.setItem("ansor_bogor_ads", JSON.stringify(dbData["ansor_bogor_ads"]));
+      }
+      if (dbData["ansor_bogor_menu_status"]) {
+        const merged = { ...defaultMenuStatus, ...dbData["ansor_bogor_menu_status"] };
+        setMenuStatusState(merged);
+        localStorage.setItem("ansor_bogor_menu_status", JSON.stringify(merged));
+      }
+      if (dbData["ansor_bogor_faqs"]) {
+        setFaqsState(dbData["ansor_bogor_faqs"]);
+        localStorage.setItem("ansor_bogor_faqs", JSON.stringify(dbData["ansor_bogor_faqs"]));
+      }
+      if (dbData["ansor_bogor_programs"]) {
+        setProgramsState(dbData["ansor_bogor_programs"]);
+        localStorage.setItem("ansor_bogor_programs", JSON.stringify(dbData["ansor_bogor_programs"]));
+      }
+      if (dbData["ansor_bogor_news"]) {
+        setNewsState(dbData["ansor_bogor_news"]);
+        localStorage.setItem("ansor_bogor_news", JSON.stringify(dbData["ansor_bogor_news"]));
+      }
+      if (dbData["ansor_bogor_leaders"]) {
+        setLeadersState(dbData["ansor_bogor_leaders"]);
+        localStorage.setItem("ansor_bogor_leaders", JSON.stringify(dbData["ansor_bogor_leaders"]));
+      }
+      if (dbData["ansor_bogor_gallery"]) {
+        setGalleryState(dbData["ansor_bogor_gallery"]);
+        localStorage.setItem("ansor_bogor_gallery", JSON.stringify(dbData["ansor_bogor_gallery"]));
+      }
+      if (dbData["ansor_bogor_digital_services"]) {
+        setDigitalServicesState(dbData["ansor_bogor_digital_services"]);
+        localStorage.setItem("ansor_bogor_digital_services", JSON.stringify(dbData["ansor_bogor_digital_services"]));
+      }
+      if (dbData["ansor_bogor_menu_labels"]) {
+        setMenuLabelsState(dbData["ansor_bogor_menu_labels"]);
+        localStorage.setItem("ansor_bogor_menu_labels", JSON.stringify(dbData["ansor_bogor_menu_labels"]));
+      }
+      if (dbData["ansor_bogor_users"]) {
+        setUsersState(dbData["ansor_bogor_users"]);
+        localStorage.setItem("ansor_bogor_users", JSON.stringify(dbData["ansor_bogor_users"]));
+      }
+      if (dbData["ansor_bogor_kaderisasi"]) {
+        setKaderisasiDataState(dbData["ansor_bogor_kaderisasi"]);
+        localStorage.setItem("ansor_bogor_kaderisasi", JSON.stringify(dbData["ansor_bogor_kaderisasi"]));
+      }
+      if (dbData["ansor_bogor_registrants"]) {
+        setRegistrantsDataState(dbData["ansor_bogor_registrants"]);
+        localStorage.setItem("ansor_bogor_registrants", JSON.stringify(dbData["ansor_bogor_registrants"]));
+      }
+      if (dbData["ansor_bogor_official_kaderisasi_pamphlet"]) {
+        setOfficialPamphletState(dbData["ansor_bogor_official_kaderisasi_pamphlet"]);
+        localStorage.setItem("ansor_bogor_official_kaderisasi_pamphlet", dbData["ansor_bogor_official_kaderisasi_pamphlet"]);
+      }
+      return true;
+    } catch (err) {
+      console.error("Async Supabase data load failed:", err);
+      return false;
+    }
+  };
+
   // Load from local storage and sync with Supabase on mount
   useEffect(() => {
     // 1. First, load from localStorage instantly for zero-latency startup and backup fallback
@@ -512,96 +604,26 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       console.error("Local storage initialization failed:", e);
     }
 
-    // 2. Load fresh data from Supabase asynchronously in background and cache it
-    async function loadFromSupabase() {
-      try {
-        const dbData = await getSupabaseCMSData();
-        if (!dbData) {
-          console.log("Supabase table 'ansor_bogor_cms' is not queried (probably empty or table doesn't exist yet).");
-          return;
-        }
+    // 2. Fetch latest data right away on application startup
+    syncFromSupabase();
 
-        console.log("Successfully fetched fresh database content from Supabase, syncing frontend...");
+    // 3. Subscribe to real-time updates. If edits occur on another device (like desktop),
+    // they are automatically refreshed active in memory on the other screen (e.g. mobile) in real time!
+    const channel = supabase
+      .channel("ansor_bogor_cms_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ansor_bogor_cms" },
+        (payload) => {
+          console.log("Supabase Realtime CMS table update broadcast received:", payload);
+          syncFromSupabase();
+        }
+      )
+      .subscribe();
 
-        if (dbData["ansor_bogor_hero"]) {
-          setHeroConfigState(dbData["ansor_bogor_hero"]);
-          localStorage.setItem("ansor_bogor_hero", JSON.stringify(dbData["ansor_bogor_hero"]));
-        }
-        if (dbData["ansor_bogor_about"]) {
-          setAboutConfigState(dbData["ansor_bogor_about"]);
-          localStorage.setItem("ansor_bogor_about", JSON.stringify(dbData["ansor_bogor_about"]));
-        }
-        if (dbData["ansor_bogor_pillars"]) {
-          setStrategicPillarsState(dbData["ansor_bogor_pillars"]);
-          localStorage.setItem("ansor_bogor_pillars", JSON.stringify(dbData["ansor_bogor_pillars"]));
-        }
-        if (dbData["ansor_bogor_stats"]) {
-          setImpactStatsState(dbData["ansor_bogor_stats"]);
-          localStorage.setItem("ansor_bogor_stats", JSON.stringify(dbData["ansor_bogor_stats"]));
-        }
-        if (dbData["ansor_bogor_contact"]) {
-          setContactConfigState(dbData["ansor_bogor_contact"]);
-          localStorage.setItem("ansor_bogor_contact", JSON.stringify(dbData["ansor_bogor_contact"]));
-        }
-        if (dbData["ansor_bogor_ads"]) {
-          setAdsConfigState(dbData["ansor_bogor_ads"]);
-          localStorage.setItem("ansor_bogor_ads", JSON.stringify(dbData["ansor_bogor_ads"]));
-        }
-        if (dbData["ansor_bogor_menu_status"]) {
-          const merged = { ...defaultMenuStatus, ...dbData["ansor_bogor_menu_status"] };
-          setMenuStatusState(merged);
-          localStorage.setItem("ansor_bogor_menu_status", JSON.stringify(merged));
-        }
-        if (dbData["ansor_bogor_faqs"]) {
-          setFaqsState(dbData["ansor_bogor_faqs"]);
-          localStorage.setItem("ansor_bogor_faqs", JSON.stringify(dbData["ansor_bogor_faqs"]));
-        }
-        if (dbData["ansor_bogor_programs"]) {
-          setProgramsState(dbData["ansor_bogor_programs"]);
-          localStorage.setItem("ansor_bogor_programs", JSON.stringify(dbData["ansor_bogor_programs"]));
-        }
-        if (dbData["ansor_bogor_news"]) {
-          setNewsState(dbData["ansor_bogor_news"]);
-          localStorage.setItem("ansor_bogor_news", JSON.stringify(dbData["ansor_bogor_news"]));
-        }
-        if (dbData["ansor_bogor_leaders"]) {
-          setLeadersState(dbData["ansor_bogor_leaders"]);
-          localStorage.setItem("ansor_bogor_leaders", JSON.stringify(dbData["ansor_bogor_leaders"]));
-        }
-        if (dbData["ansor_bogor_gallery"]) {
-          setGalleryState(dbData["ansor_bogor_gallery"]);
-          localStorage.setItem("ansor_bogor_gallery", JSON.stringify(dbData["ansor_bogor_gallery"]));
-        }
-        if (dbData["ansor_bogor_digital_services"]) {
-          setDigitalServicesState(dbData["ansor_bogor_digital_services"]);
-          localStorage.setItem("ansor_bogor_digital_services", JSON.stringify(dbData["ansor_bogor_digital_services"]));
-        }
-        if (dbData["ansor_bogor_menu_labels"]) {
-          setMenuLabelsState(dbData["ansor_bogor_menu_labels"]);
-          localStorage.setItem("ansor_bogor_menu_labels", JSON.stringify(dbData["ansor_bogor_menu_labels"]));
-        }
-        if (dbData["ansor_bogor_users"]) {
-          setUsersState(dbData["ansor_bogor_users"]);
-          localStorage.setItem("ansor_bogor_users", JSON.stringify(dbData["ansor_bogor_users"]));
-        }
-        if (dbData["ansor_bogor_kaderisasi"]) {
-          setKaderisasiDataState(dbData["ansor_bogor_kaderisasi"]);
-          localStorage.setItem("ansor_bogor_kaderisasi", JSON.stringify(dbData["ansor_bogor_kaderisasi"]));
-        }
-        if (dbData["ansor_bogor_registrants"]) {
-          setRegistrantsDataState(dbData["ansor_bogor_registrants"]);
-          localStorage.setItem("ansor_bogor_registrants", JSON.stringify(dbData["ansor_bogor_registrants"]));
-        }
-        if (dbData["ansor_bogor_official_kaderisasi_pamphlet"]) {
-          setOfficialPamphletState(dbData["ansor_bogor_official_kaderisasi_pamphlet"]);
-          localStorage.setItem("ansor_bogor_official_kaderisasi_pamphlet", dbData["ansor_bogor_official_kaderisasi_pamphlet"]);
-        }
-      } catch (err) {
-        console.error("Async Supabase data load failed:", err);
-      }
-    }
-
-    loadFromSupabase();
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Sync to database and localStorage helpers
@@ -872,6 +894,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         setOfficialPamphlet,
         resetToDefault,
         publishAllToSupabase,
+        syncFromSupabase,
         isCmsOpen,
         setIsCmsOpen,
         theme,

@@ -92,6 +92,16 @@ export default function Programs({ onProgramSelect }: ProgramsProps) {
                     alt={program.title}
                     className="w-full h-full object-cover transition-transform duration-700 scale-100 group-hover/img:scale-105 opacity-90 group-hover/img:opacity-100"
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (target.src.includes("maxresdefault.jpg")) {
+                        target.src = target.src.replace("maxresdefault.jpg", "hqdefault.jpg");
+                      } else if (target.src.includes("hqdefault.jpg")) {
+                        target.src = target.src.replace("hqdefault.jpg", "0.jpg");
+                      } else if (!target.src.includes("unsplash.com")) {
+                        target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=60";
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent" />
                   

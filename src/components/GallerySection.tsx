@@ -73,6 +73,16 @@ export default function GallerySection() {
                 alt={photo.title}
                 className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700 group-hover:scale-105"
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (target.src.includes("maxresdefault.jpg")) {
+                    target.src = target.src.replace("maxresdefault.jpg", "hqdefault.jpg");
+                  } else if (target.src.includes("hqdefault.jpg")) {
+                    target.src = target.src.replace("hqdefault.jpg", "0.jpg");
+                  } else if (!target.src.includes("unsplash.com")) {
+                    target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=60";
+                  }
+                }}
               />
               
               {/* Blur backdrop overlay on hover */}
@@ -139,6 +149,16 @@ export default function GallerySection() {
               alt={filteredPhotos[lightboxIndex].title}
               className="max-h-[70vh] object-contain rounded-lg border border-white/10 shadow-2xl"
               referrerPolicy="no-referrer"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src.includes("maxresdefault.jpg")) {
+                  target.src = target.src.replace("maxresdefault.jpg", "hqdefault.jpg");
+                } else if (target.src.includes("hqdefault.jpg")) {
+                  target.src = target.src.replace("hqdefault.jpg", "0.jpg");
+                } else if (!target.src.includes("unsplash.com")) {
+                  target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=60";
+                }
+              }}
             />
             
             {/* Context descriptions */}

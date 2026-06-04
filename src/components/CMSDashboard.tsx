@@ -38,6 +38,7 @@ export default function CMSDashboard() {
     officialPamphlet, setOfficialPamphlet,
     resetToDefault,
     publishAllToSupabase,
+    syncFromSupabase,
     setIsCmsOpen,
     theme,
     toggleTheme
@@ -145,8 +146,48 @@ export default function CMSDashboard() {
 
   // Selected tab in the CMS (including users & labels configuration)
   type TabType = "general" | "about" | "programs" | "news" | "gallery" | "leaders" | "contact" | "analytics" | "services" | "users" | "registrants";
-  const [activeTab, setActiveTab] = useState<TabType>("general");
+  const [activeTab, setActiveTab ] = useState<TabType>("general");
   const [isSyncingDb, setIsSyncingDb] = useState(false);
+  const [dbConnected, setDbConnected] = useState<boolean | null>(null);
+
+  // Check connection to Supabase table ‘ansor_bogor_cms’ on mount
+  useEffect(() => {
+    async function checkConnection() {
+      try {
+        const { data, error } = await supabase.from("ansor_bogor_cms").select("key").limit(1);
+        if (error) {
+          setDbConnected(false);
+        } else {
+          setDbConnected(true);
+        }
+      } catch (err) {
+        setDbConnected(false);
+      }
+    }
+    checkConnection();
+  }, []);
+
+  const handleManualDBSync = async () => {
+    if (isSyncingDb) return;
+    setIsSyncingDb(true);
+    triggerToast("Menghubungi Supabase & mengunduh data ril terbaru...", "success");
+    try {
+      const success = await syncFromSupabase();
+      if (success) {
+        setDbConnected(true);
+        triggerToast("Sinkronisasi Berhasil! Seluruh data diperbarui dari database.", "success");
+      } else {
+        setDbConnected(false);
+        triggerToast("Sinkronisasi Gagal. Masih menampilkan data lokal (fallback).", "error");
+      }
+    } catch (err: any) {
+      setDbConnected(false);
+      triggerToast(`Koneksi gagal: ${err.message || err}`, "error");
+    } finally {
+      setIsSyncingDb(false);
+    }
+  };
+
   const [isSqlExpanded, setIsSqlExpanded] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
 
@@ -1385,6 +1426,35 @@ export default function CMSDashboard() {
         </div>
 
         <div className="flex items-center gap-3 relative z-10">
+          {/* Supabase Connection Status Pill with Manual Sync Trigger */}
+          <button
+            type="button"
+            onClick={handleManualDBSync}
+            disabled={isSyncingDb}
+            className={`px-3 py-1.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all font-semibold ${
+              dbConnected === null
+                ? "bg-amber-50/50 border-amber-200 text-amber-600 dark:bg-amber-950/20 dark:border-amber-900/30 dark:text-amber-300"
+                : dbConnected === true
+                ? "bg-emerald-50/70 border-emerald-200/80 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-800/40 dark:text-emerald-300 cursor-pointer hover:bg-emerald-100/60"
+                : "bg-red-50/70 border-red-200/80 text-red-700 dark:bg-red-950/25 dark:border-red-900/30 dark:text-red-300 cursor-pointer hover:bg-red-100/50"
+            }`}
+            title="Klik untuk memicu pemuatan paksa (pull) data ril terupdate langsung dari Server database Supabase"
+          >
+            <Database className={`w-3.5 h-3.5 ${isSyncingDb ? "animate-spin text-emerald-500" : dbConnected === true ? "text-emerald-500" : "text-amber-500 animate-pulse"}`} />
+            <span className="hidden sm:inline">
+              {dbConnected === null ? (
+                "Mengecek Koneksi..."
+              ) : dbConnected === true ? (
+                <span>Database: Terhubung {isSyncingDb && "(Sinkronisasi...)"}</span>
+              ) : (
+                "Database: Offline / Lokal"
+              )}
+            </span>
+            <span className="inline sm:hidden text-[10px]">
+              {dbConnected === null ? "DB..." : dbConnected === true ? "DB: Terhubung" : "DB: Lokal"}
+            </span>
+          </button>
+
           {/* Default Restore available exclusively for superadmin */}
           {isSuperAdmin && (
             <button

@@ -81,6 +81,16 @@ export default function Leaders() {
                         alt={leader.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (target.src.includes("maxresdefault.jpg")) {
+                            target.src = target.src.replace("maxresdefault.jpg", "hqdefault.jpg");
+                          } else if (target.src.includes("hqdefault.jpg")) {
+                            target.src = target.src.replace("hqdefault.jpg", "0.jpg");
+                          } else if (!target.src.includes("unsplash.com")) {
+                            target.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80";
+                          }
+                        }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent" />
                     </div>
@@ -130,6 +140,16 @@ export default function Leaders() {
                           alt={leader.name}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                           referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (target.src.includes("maxresdefault.jpg")) {
+                              target.src = target.src.replace("maxresdefault.jpg", "hqdefault.jpg");
+                            } else if (target.src.includes("hqdefault.jpg")) {
+                              target.src = target.src.replace("hqdefault.jpg", "0.jpg");
+                            } else if (!target.src.includes("unsplash.com")) {
+                              target.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80";
+                            }
+                          }}
                         />
                       </div>
                       <div className="mt-3">
@@ -165,6 +185,16 @@ export default function Leaders() {
                           alt={leader.name}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                           referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (target.src.includes("maxresdefault.jpg")) {
+                              target.src = target.src.replace("maxresdefault.jpg", "hqdefault.jpg");
+                            } else if (target.src.includes("hqdefault.jpg")) {
+                              target.src = target.src.replace("hqdefault.jpg", "0.jpg");
+                            } else if (!target.src.includes("unsplash.com")) {
+                              target.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80";
+                            }
+                          }}
                         />
                       </div>
                       <div className="mt-3">
@@ -210,6 +240,16 @@ export default function Leaders() {
                       alt={leader.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (target.src.includes("maxresdefault.jpg")) {
+                          target.src = target.src.replace("maxresdefault.jpg", "hqdefault.jpg");
+                        } else if (target.src.includes("hqdefault.jpg")) {
+                          target.src = target.src.replace("hqdefault.jpg", "0.jpg");
+                        } else if (!target.src.includes("unsplash.com")) {
+                          target.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80";
+                        }
+                      }}
                     />
                   </div>
                   <div className="flex-1 min-w-0">

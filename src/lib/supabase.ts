@@ -58,8 +58,16 @@ const SUPABASE_ANON_KEY = sanitizeSupabaseKey(RAW_KEY);
 
 console.log("Supabase URL initialized:", SUPABASE_URL);
 
-// Initialize Supabase client
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase client with headers that bypass aggressive mobile browser caching
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  global: {
+    headers: {
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Pragma": "no-cache",
+      "Expires": "0"
+    }
+  }
+});
 
 /**
  * Fetches all CMS settings or items from Supabase in a single, fast query.

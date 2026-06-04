@@ -81,6 +81,16 @@ export default function NewsSection({ onNewsSelect }: NewsSectionProps) {
                   alt={article.title}
                   className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity transition-transform duration-700 group-hover:scale-103"
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (target.src.includes("maxresdefault.jpg")) {
+                      target.src = target.src.replace("maxresdefault.jpg", "hqdefault.jpg");
+                    } else if (target.src.includes("hqdefault.jpg")) {
+                      target.src = target.src.replace("hqdefault.jpg", "0.jpg");
+                    } else if (!target.src.includes("unsplash.com")) {
+                      target.src = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=60";
+                    }
+                  }}
                 />
                 
                 <span className="absolute top-4 left-4 bg-emerald-650 text-white font-extrabold text-[8px] tracking-[0.2em] uppercase px-3 py-1 rounded-full shadow-md border border-white/15 font-mono">
