@@ -31,7 +31,7 @@ export default function About({ onVideoClick }: AboutProps) {
       {/* Decorative ambient background overlays */}
       <div className="absolute top-[25%] -left-[10%] w-[450px] h-[450px] bg-emerald-555/5 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
           {/* LEFT: Video Player Card Overlay */}

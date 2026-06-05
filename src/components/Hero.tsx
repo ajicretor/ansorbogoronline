@@ -28,7 +28,7 @@ export default function Hero({ onJoinClick, onAboutClick, onVideoClick }: HeroPr
         <div className="absolute inset-0 bg-[radial-gradient(rgba(16,185,129,0.025)_1px,transparent_1px)] [background-size:24px_24px] opacity-80" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+       <div className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
           {/* LEFT: Texts and core branding CTAs */}

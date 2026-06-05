@@ -1,5 +1,5 @@
-import { useState, ChangeEvent, FormEvent, useEffect } from "react";
-import { X, Check, ArrowRight, Shield, Award, Calendar, User, Eye, Sparkles, Upload, Trash2 } from "lucide-react";
+import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
+import { X, Check, ArrowRight, Shield, Award, Calendar, User, Eye, Sparkles, Upload, Trash2, Volume2, VolumeX, ThumbsUp, Type, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { ProgramItem, NewsArticle, Registrant } from "../types";
 import { useCMS } from "../context/CMSContext";
@@ -41,6 +41,13 @@ export default function Modals({
   const { heroConfig, registrantsData, setRegistrantsData, officialPamphlet } = useCMS();
   // Form handling inside Join Modal
   const [regType, setRegType] = useState<"select" | "member" | "kaderisasi">("select");
+
+  // Professional News Comfort Mode Reader States
+  const [readerTheme, setReaderTheme] = useState<'dark' | 'light' | 'sepia'>('dark');
+  const [readerFontSize, setReaderFontSize] = useState<'sm' | 'md' | 'lg'>('md');
+  const [likesCount, setLikesCount] = useState<{[id: string]: number}>({});
+  const [isPlayingSpeech, setIsPlayingSpeech] = useState(false);
+  const [scrollPercent, setScrollPercent] = useState(0);
 
   // State for News share copy / comments section
   const [newsComments, setNewsComments] = useState<{ [id: string]: Array<{ author: string; content: string; time: string }> }>({
@@ -113,7 +120,17 @@ export default function Modals({
       setShowCommentsSection(false);
       setNewCommentText("");
       setJustCopied(false);
+      setIsPlayingSpeech(false);
+      setScrollPercent(0);
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
     }
+    return () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, [selectedNews]);
   const [formData, setFormData] = useState({
     name: "",
@@ -1212,334 +1229,490 @@ export default function Modals({
       </AnimatePresence>
 
       <AnimatePresence>
-        {/* --- 4. NEWS FULL ARTICLE PREVIEW MODAL --- */}
-        {selectedNews && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={onNewsClose}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
-            />
+        {/* --- 4. NEWS FULL ARTICLE IMMERSIVE READ-DECK --- */}
+        {selectedNews && (() => {
+          // Determine theme-specific color mapping
+          let bgClass = "bg-stone-950 text-stone-100";
+          let docClass = "bg-neutral-900/90 border-neutral-800 text-neutral-100";
+          let textMutedClass = "text-neutral-400";
+          let titleClass = "text-white font-sans";
+          let quoteClass = "border-l-4 border-emerald-500 bg-emerald-950/25 text-emerald-300";
+          let dividerClass = "border-neutral-800";
+          let commentsBg = "bg-neutral-950/80 border-neutral-800";
+          let commentCardBg = "bg-neutral-900 border-neutral-800/80";
 
-            {/* Modal Body */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", duration: 0.5 }}
-              className="relative w-full max-w-3xl bg-white border border-slate-200/80 rounded-2xl shadow-2xl overflow-hidden text-slate-800 z-10 font-sans"
+          if (readerTheme === "light") {
+            bgClass = "bg-[#f4f2f0] text-stone-850";
+            docClass = "bg-[#faf9f6] border-[#e4dec2]/50 text-stone-800 shadow-xl";
+            textMutedClass = "text-stone-500";
+            titleClass = "text-stone-900 font-sans";
+            quoteClass = "border-l-4 border-emerald-600 bg-emerald-50/70 text-emerald-800";
+            dividerClass = "border-stone-200";
+            commentsBg = "bg-[#f1efed] border-[#e5dec5]";
+            commentCardBg = "bg-white border-stone-200/60";
+          } else if (readerTheme === "sepia") {
+            bgClass = "bg-[#ebdcb9] text-[#433422]";
+            docClass = "bg-[#f4ecd8] border-[#dfcca4]/60 text-[#433422] shadow-xl";
+            textMutedClass = "text-[#6c593d]";
+            titleClass = "text-[#2e2111] font-sans";
+            quoteClass = "border-l-4 border-amber-600 bg-amber-500/10 text-[#543b17]";
+            dividerClass = "border-[#dfcca4]/50";
+            commentsBg = "bg-[#ebdca6]/30 border-[#dbca98]";
+            commentCardBg = "bg-[#faf5e8] border-[#ebdca6]/70";
+          }
+
+          // Font sizing style mapping
+          let fontBodySz = "text-base leading-relaxed sm:text-lg sm:leading-loose";
+          if (readerFontSize === "sm") {
+            fontBodySz = "text-sm leading-relaxed sm:text-sm sm:leading-relaxed";
+          } else if (readerFontSize === "lg") {
+            fontBodySz = "text-lg leading-loose sm:text-xl sm:leading-loose";
+          }
+
+          const currentLikes = likesCount[selectedNews.id] || 
+            (Number(selectedNews.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 25) + 32);
+
+          const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+            const el = e.currentTarget;
+            const pct = (el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100;
+            setScrollPercent(Math.min(100, Math.max(0, pct)));
+          };
+
+          const handleSpeechToggle = () => {
+            if (!window.speechSynthesis) {
+              alert("Browser Anda tidak mendukung text-to-speech audio.");
+              return;
+            }
+            if (isPlayingSpeech) {
+              window.speechSynthesis.cancel();
+              setIsPlayingSpeech(false);
+            } else {
+              window.speechSynthesis.cancel();
+              const utterance = new SpeechSynthesisUtterance(
+                `${selectedNews.title}. Kabar Kategori ${selectedNews.category}. Oleh ${selectedNews.author}. Isi Kabar: ${selectedNews.content.replace(/[#*`_]/g, '')}`
+              );
+              utterance.lang = "id-ID";
+              utterance.rate = 1.0;
+              utterance.onend = () => setIsPlayingSpeech(false);
+              utterance.onerror = () => setIsPlayingSpeech(false);
+              window.speechSynthesis.speak(utterance);
+              setIsPlayingSpeech(true);
+            }
+          };
+
+          const handleIncrementLikes = () => {
+            const prevVal = likesCount[selectedNews.id] || currentLikes;
+            setLikesCount({
+              ...likesCount,
+              [selectedNews.id]: prevVal + 1
+            });
+          };
+
+          return (
+            <div 
+              className={`fixed inset-0 z-50 overflow-y-auto transition-colors duration-300 font-sans ${bgClass}`}
+              onScroll={handleScroll}
             >
-              {/* Cover banner */}
-              <div className="relative h-72 w-full">
-                <img
-                  src={selectedNews.imageUrl}
-                  alt={selectedNews.title}
-                  className="w-full h-full object-cover opacity-95"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+              {/* Horizontal scroll progress bar */}
+              <div 
+                className="fixed top-0 left-0 h-1 bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 z-[9999] transition-all duration-75"
+                style={{ width: `${scrollPercent}%` }}
+              />
+
+              {/* Reader Floating Controls / Action Bar */}
+              <header className={`sticky top-0 z-[50] w-full backdrop-blur-md px-4 py-3 sm:px-6 border-b flex justify-between items-center transition-all duration-300 ${
+                readerTheme === "light" 
+                  ? "bg-white/80 border-stone-200 text-stone-800 shadow-sm"
+                  : readerTheme === "sepia"
+                    ? "bg-[#f4ecd8]/90 border-[#dfcca4] text-[#433422] shadow-sm"
+                    : "bg-neutral-950/80 border-neutral-800/80 text-white shadow-lg"
+              }`}>
+                {/* Left: Back Link */}
                 <button
                   type="button"
-                  id="close-news-modal"
                   onClick={onNewsClose}
-                  className="absolute top-4 right-4 bg-black/40 hover:bg-black/80 border border-white/10 p-1.5 rounded-full text-white backdrop-blur-sm transition-all cursor-pointer"
+                  className="flex items-center gap-2 hover:scale-105 active:scale-95 transition-all outline-none font-bold text-xs tracking-wide cursor-pointer text-emerald-500 border-0 bg-transparent"
                 >
-                  <X className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 rotate-180" />
+                  <span className="hidden sm:inline font-sans">Kembali Ke Portal</span>
+                  <span className="sm:hidden font-sans">Kembali</span>
                 </button>
 
-                <div className="absolute bottom-6 left-6 right-6 text-white text-left">
-                  <span className="bg-emerald-600 text-white font-bold font-mono text-[9px] tracking-widest px-2.5 py-1 rounded inline-block mb-3 uppercase shadow-sm">
-                    {selectedNews.category}
-                  </span>
-                  <h3 className="text-xl md:text-2xl font-display font-light leading-tight tracking-tight text-white">
-                    {selectedNews.title}
-                  </h3>
-                </div>
-              </div>
-
-              {/* Metadata */}
-              <div className="bg-slate-50 border-b border-slate-100 px-8 py-3.5 flex flex-wrap justify-between items-center text-xs text-slate-500 gap-3">
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    {selectedNews.date}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-slate-400" />
-                    Oleh: {selectedNews.author}
-                  </span>
-                </div>
-                <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 rounded font-mono text-[10px] tracking-wider font-bold shadow-sm">
-                  <Eye className="w-3.5 h-3.5 animate-pulse" />
-                  {selectedNews.readTime}
-                </span>
-              </div>
-
-              {/* Markdown-style content block */}
-              <div className="p-8 text-left max-h-[45vh] overflow-y-auto">
-                <div className="space-y-4 text-slate-600 leading-relaxed font-sans font-medium prose max-w-none">
-                  <p className="font-semibold text-slate-800 border-l-4 border-emerald-500 bg-slate-50 pl-4 py-2.5 italic rounded-r-md">
-                    {selectedNews.excerpt}
-                  </p>
-                  <p>
-                    {selectedNews.content} Organisasi Pimpinan Cabang Gerakan Pemuda Ansor Kabupaten Bogor senantiasa bergerak dinamis mendampingi masyarakat serta memperkokoh kedaulatan bangsa. Kiprah nyata perjuangan kaderisasi ini diharapkan mampu melahirkan kepemimpinan muda yang transformatif dan konsisten menyebarkan kedamaian Islam yang rahmatan lil alamin.
-                  </p>
-                  <p>
-                    Dalam pelaksanaan setiap aksi di lapangan, koordinasi berkesinambungan dilakukan bersama tokoh ulama Nahdlatul Ulama serta jajaran pemerintah daerah guna menjamin sasaran kemanfaatan yang tepat guna bagi warga Bogor.
-                  </p>
-                  <p>
-                    Bagi masyarakat yang tertarik untuk turut serta memberikan dukungan atau mendaftarkan diri menjadi bagian dalam angkatan perjuangan kader berikutnya, pendaftaran kini tersedia secara digital melalui tautan registrasi di halaman web utama kami. Mari berkhidmat bersama demi kemakmuran umat dan bangsa Indonesia.
-                  </p>
-                </div>
-
-                {/* INTERACTIVE SHARING & COMMENTS BAR */}
-                <div className="pt-6 mt-8 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 font-sans">
-                  {/* Left: Comments Pill */}
+                {/* Center: Controls panel */}
+                <div className="flex items-center gap-3 md:gap-5">
+                  {/* Speech reader AI */}
                   <button
                     type="button"
-                    onClick={() => setShowCommentsSection(!showCommentsSection)}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-full transition-all shadow-sm active:scale-95 cursor-pointer"
+                    onClick={handleSpeechToggle}
+                    className={`p-1.5 sm:px-3 sm:py-1 rounded-full text-[10px] font-bold flex items-center gap-1 transition-all border-0 cursor-pointer ${
+                      isPlayingSpeech 
+                        ? "bg-emerald-600/90 text-white animate-pulse" 
+                        : "bg-emerald-600/10 hover:bg-emerald-600/25 text-emerald-500"
+                    }`}
+                    title={isPlayingSpeech ? "Berhentikan Suara" : "Dengarkan Berita (AI Reader)"}
                   >
-                    <span className="text-sm">💬</span>
-                    <span>
-                      {getCommentsForArticle(selectedNews.id, selectedNews.title).length} komentar
-                    </span>
+                    {isPlayingSpeech ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                    <span className="hidden md:inline">{isPlayingSpeech ? "Mengudara (Mute)" : "Dengarkan AI"}</span>
                   </button>
 
-                  {/* Right: BAGIKAN with Circle Social Media Buttons */}
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-slate-500 text-[10px] sm:text-xs font-bold tracking-widest uppercase select-none mr-1.5">
-                      BAGIKAN
-                    </span>
+                  <div className="h-4 w-px bg-current opacity-20" />
 
-                    {/* Facebook Share */}
-                    <a
-                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + "/news/" + selectedNews.id)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-full bg-[#3B5998] hover:bg-[#2d4373] text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
-                      title="Bagikan ke Facebook"
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
-                      </svg>
-                    </a>
-
-                    {/* X (formerly Twitter) Share */}
-                    <a
-                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.origin + "/news/" + selectedNews.id)}&text=${encodeURIComponent(`Baca berita terbaru PC GP Ansor Bogor: ${selectedNews.title}`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-full bg-black hover:bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
-                      title="Bagikan ke X"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                      </svg>
-                    </a>
-
-                    {/* WhatsApp Share */}
-                    <a
-                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${selectedNews.title} ✨ Selengkapnya baca di: ${window.location.origin}/news/${selectedNews.id}`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-full bg-[#25D366] hover:bg-[#1ebd5d] text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
-                      title="Bagikan ke WhatsApp"
-                    >
-                      <svg className="w-4 h-4 translate-y-[0.5px]" fill="currentColor" viewBox="0 0 24 24">
-                        <path fillRule="evenodd" clipRule="evenodd" d="M12.031 2c-5.511 0-9.982 4.47-9.982 9.98 0 1.95.56 3.78 1.529 5.34l-1.026 3.75 3.843-1.01c1.5.91 3.25 1.44 5.122 1.44 5.51 0 9.98-4.47 9.98-9.98C22.013 6.47 17.542 2 12.031 2zm6.657 14.15c-.27.76-1.37 1.39-1.9 1.43-.53.04-1.2-.1-3.41-.98-2.83-1.12-4.66-3.99-4.8-4.18-.14-.19-1.15-1.53-1.15-2.92 0-1.39.73-2.07 1-2.35.26-.27.53-.34.71-.34H10c.18 0 .42-.07.65.48.24.58.81 1.98.88 2.12.07.14.12.3.02.49-.1.19-.15.3-.3.48-.15.17-.32.39-.46.52-.16.15-.33.32-.14.65.19.32.85 1.4 1.83 2.27 1.25 1.11 2.3 1.45 2.63 1.62.33.16.52.12.72-.1.2-.23.88-1.02 1.12-1.37.23-.35.47-.3.8-.17.33.12 2.1.99 2.46 1.17.36.18.6.27.69.42.08.15.08.87-.2 1.63z" />
-                      </svg>
-                    </a>
-
-                    {/* Telegram Share */}
-                    <a
-                      href={`https://t.me/share/url?url=${encodeURIComponent(window.location.origin + "/news/" + selectedNews.id)}&text=${encodeURIComponent(selectedNews.title)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-full bg-[#0088cc] hover:bg-[#0077b3] text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
-                      title="Bagikan ke Telegram"
-                    >
-                      <svg className="w-3.5 h-3.5 -translate-x-[0.5px] translate-y-[0.5px]" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.88 7.32l-1.68 7.92c-.12.56-.48.68-.96.4l-2.56-1.88-1.24 1.2c-.12.12-.24.24-.36.24l.16-2.52 4.6-4.16c.2-.16-.04-.24-.3-.08l-5.68 3.56-2.44-.76c-.52-.16-.52-.52.12-.76l9.6-3.72c.44-.16.84.12.64.96z" />
-                      </svg>
-                    </a>
-
-                    {/* Instagram Share & Copy */}
-                    <a
-                      href="https://www.instagram.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        const directUrl = `${window.location.origin}/news/${selectedNews.id}`;
-                        navigator.clipboard.writeText(directUrl);
-                        setCopiedMessage("Link IG Tersalin!");
-                        setJustCopied(true);
-                        setTimeout(() => setJustCopied(false), 2000);
-                      }}
-                      className="relative w-8 h-8 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] hover:scale-110 active:scale-95 text-white flex items-center justify-center transition-all shadow-md"
-                      title="Salin Link & Bagikan ke Instagram"
-                    >
-                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-                      </svg>
-                      
-                      <AnimatePresence>
-                        {justCopied && copiedMessage === "Link IG Tersalin!" && (
-                          <motion.span
-                            initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                            animate={{ opacity: 1, y: -30, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            className="absolute bg-gradient-to-r from-pink-600 to-purple-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap z-50 animate-bounce"
-                          >
-                            Link IG Tersalin!
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </a>
-
-                    {/* TikTok Share & Copy */}
-                    <a
-                      href="https://www.tiktok.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        const directUrl = `${window.location.origin}/news/${selectedNews.id}`;
-                        navigator.clipboard.writeText(directUrl);
-                        setCopiedMessage("Link TikTok Tersalin!");
-                        setJustCopied(true);
-                        setTimeout(() => setJustCopied(false), 2000);
-                      }}
-                      className="relative w-8 h-8 rounded-full bg-black hover:scale-110 active:scale-95 text-white flex items-center justify-center transition-all border border-neutral-800 shadow-md"
-                      title="Salin Link & Bagikan ke TikTok"
-                    >
-                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.59 4.19 1.05 1.15 2.52 1.83 4.07 1.94V10c-1.12-.01-2.23-.33-3.19-.92-.61-.38-1.14-.88-1.54-1.48v6.78c-.01 1.93-.65 3.82-1.84 5.31-1.39 1.63-3.5 2.47-5.61 2.27-2.32-.23-4.35-1.74-5.16-3.88-.93-2.31-.41-5.06 1.34-6.85 1.55-1.51 3.82-2.12 5.94-1.57V13.8c-.59-.2-1.23-.21-1.83-.04-.84.23-1.54.85-1.89 1.62-.48.98-.32 2.19.41 3.01.62.69 1.54 1.03 2.46.91 1-.1 1.81-.88 1.98-1.88.08-.47.07-.94.07-1.41V.02z" />
-                      </svg>
-                      
-                      <AnimatePresence>
-                        {justCopied && copiedMessage === "Link TikTok Tersalin!" && (
-                          <motion.span
-                            initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                            animate={{ opacity: 1, y: -30, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            className="absolute bg-neutral-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap z-50 animate-bounce"
-                          >
-                            Link TikTok Tersalin!
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </a>
-
-                    {/* Copy Link Button */}
+                  {/* Sizing Toggles */}
+                  <div className="flex items-center gap-1 bg-current/5 p-1 rounded-full border border-current/10">
                     <button
                       type="button"
-                      onClick={() => {
-                        const directUrl = `${window.location.origin}/news/${selectedNews.id}`;
-                        navigator.clipboard.writeText(directUrl);
-                        setCopiedMessage("Tersalin!");
-                        setJustCopied(true);
-                        setTimeout(() => setJustCopied(false), 2000);
-                      }}
-                      className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md cursor-pointer ${
-                        justCopied && copiedMessage === "Tersalin!" ? "bg-emerald-600 text-white" : "bg-slate-500 hover:bg-slate-600 text-white"
+                      onClick={() => setReaderFontSize("sm")}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold cursor-pointer transition-all border-0 ${
+                        readerFontSize === "sm" ? "bg-emerald-600 text-white" : "hover:bg-current/10 text-current bg-transparent"
                       }`}
-                      title="Salin Tautan"
+                      title="Ukuran Font Kecil (A-)"
                     >
-                      {justCopied && copiedMessage === "Tersalin!" ? (
-                        <Check className="w-3.5 h-3.5" />
-                      ) : (
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                        </svg>
-                      )}
-                      
-                      {/* Floating Copy Success Bubble */}
-                      <AnimatePresence>
-                        {justCopied && copiedMessage === "Tersalin!" && (
-                          <motion.span
-                            initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                            animate={{ opacity: 1, y: -30, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            className="absolute bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap z-50"
-                          >
-                            Tersalin!
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
+                      A-
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReaderFontSize("md")}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold cursor-pointer transition-all border-0 ${
+                        readerFontSize === "md" ? "bg-emerald-600 text-white" : "hover:bg-current/10 text-current bg-transparent"
+                      }`}
+                      title="Ukuran Font Normal"
+                    >
+                      A
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReaderFontSize("lg")}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold cursor-pointer transition-all border-0 ${
+                        readerFontSize === "lg" ? "bg-emerald-600 text-white" : "hover:bg-current/10 text-current bg-transparent"
+                      }`}
+                      title="Ukuran Font Besar (A+)"
+                    >
+                      A+
+                    </button>
+                  </div>
+
+                  <div className="h-4 w-px bg-current opacity-20" />
+
+                  {/* Theme Switches */}
+                  <div className="flex items-center gap-1 bg-current/5 p-1 rounded-full border border-current/10">
+                    <button
+                      type="button"
+                      onClick={() => setReaderTheme("dark")}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all border-0 bg-transparent ${
+                        readerTheme === "dark" ? "bg-stone-850 text-emerald-450 border border-emerald-500/20" : "text-current hover:bg-current/10"
+                      }`}
+                      title="Mode Malam"
+                    >
+                      <Moon className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReaderTheme("sepia")}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all border-0 bg-transparent ${
+                        readerTheme === "sepia" ? "bg-amber-600 text-[#f4ecd8]" : "text-current hover:bg-current/10"
+                      }`}
+                      title="Mode Sore (Eye Care Sepia)"
+                    >
+                      <Type className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReaderTheme("light")}
+                      className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-all border-0 bg-transparent ${
+                        readerTheme === "light" ? "bg-emerald-700 text-white" : "text-current hover:bg-current/10"
+                      }`}
+                      title="Mode Siang"
+                    >
+                      <Sun className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
 
-                {/* COMMENTS COLLAPSIBLE TRAY */}
-                <AnimatePresence>
-                  {showCommentsSection && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden mt-4 bg-slate-50 border border-slate-200/80 rounded-xl p-4 font-sans"
-                    >
-                      <h4 className="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5">
-                        <span className="text-sm">💬</span> Kolom Diskusi ({getCommentsForArticle(selectedNews.id, selectedNews.title).length} Komentar)
-                      </h4>
+                {/* Right: Close button */}
+                <button
+                  type="button"
+                  onClick={onNewsClose}
+                  className="p-1.5 rounded-full hover:bg-current/10 active:scale-95 transition-all text-current cursor-pointer border-0 bg-transparent"
+                  title="Tutup & Keluar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </header>
 
-                      {/* Comment Input Form */}
-                      <div className="flex gap-2 mb-4">
-                        <input
-                          type="text"
-                          value={newCommentText}
-                          onChange={(e) => setNewCommentText(e.target.value)}
-                          placeholder="Tulis opini atau komentar positif Anda di sini..."
-                          className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-emerald-500 transition-colors"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleAddComment(selectedNews.id);
-                          }}
-                        />
+              {/* Main Reading Canvas */}
+              <div className="max-w-4xl mx-auto px-4 sm:px-8 py-8 md:py-16">
+                <article className={`p-6 sm:p-10 md:p-14 rounded-3xl border transition-all duration-300 font-sans ${docClass}`}>
+                  {/* Article Category & Time Read Block */}
+                  <div className="flex flex-wrap items-center gap-3 mb-6 select-none text-xs tracking-wider uppercase font-extrabold font-sans">
+                    <span className="bg-emerald-600/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded-full flex items-center gap-1.5 font-sans">
+                      <Sparkles className="w-3 h-3 fill-emerald-500" />
+                      {selectedNews.category}
+                    </span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-30" />
+                    <span className={textMutedClass}>{selectedNews.readTime}</span>
+                  </div>
+
+                  {/* Wide Immersive Headline Title */}
+                  <h1 className={`text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight mb-8 ${titleClass}`}>
+                    {selectedNews.title}
+                  </h1>
+
+                  {/* Contributor Profile Header Card */}
+                  <div className={`p-4 rounded-2xl border mb-10 flex flex-wrap items-center justify-between gap-4 select-none ${
+                    readerTheme === "dark" ? "bg-black/20 border-neutral-800" : "bg-black/[0.02] border-stone-200"
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-sm shadow-md font-sans border border-emerald-500/20">
+                        {selectedNews.author.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className={`text-xs font-bold font-sans flex items-center gap-1 ${titleClass}`}>
+                          {selectedNews.author}
+                          <span className="inline-flex items-center bg-emerald-500/20 text-emerald-500 text-[8px] font-sans px-1 rounded-sm uppercase tracking-wide font-black">
+                            ✓ Verified
+                          </span>
+                        </p>
+                        <p className={`text-[10px] mt-0.5 ${textMutedClass}`}>Kontributor Redaksi PC GP Ansor Bogor</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-xs text-stone-500 leading-none">
+                      <Calendar className="w-3.5 h-3.5 text-emerald-500/85" />
+                      <span className={`font-mono text-[11px] font-bold ${textMutedClass}`}>{selectedNews.date}</span>
+                    </div>
+                  </div>
+
+                  {/* Full size news picture cover */}
+                  {selectedNews.imageUrl && (
+                    <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-current/5 mb-12 group select-none">
+                      <img
+                        src={selectedNews.imageUrl}
+                        alt={selectedNews.title}
+                        className="w-full h-auto max-h-[500px] object-cover hover:scale-[1.02] transition-transform duration-700"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <span className="text-[10px] text-white/80 font-mono tracking-wide">Visual Dokumentasi • GP Ansor Bogor</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Short description block */}
+                  <p className={`text-base font-medium font-sans mb-8 leading-relaxed italic opacity-95 pl-4 border-l-4 border-emerald-500/60 ${textMutedClass}`}>
+                    "{selectedNews.excerpt}"
+                  </p>
+
+                  <div className="h-px w-full bg-current opacity-10 my-8" />
+
+                  {/* Dynamic Structured News Body (Render markdown and custom spaces gracefully) */}
+                  <div className={`space-y-6 break-words whitespace-pre-wrap ${fontBodySz} font-sans`}>
+                    {selectedNews.content.split("\n\n").map((section, idx) => {
+                      const text = section.trim();
+                      if (!text) return null;
+
+                      // Blockquote render check
+                      if (text.startsWith(">")) {
+                        return (
+                          <blockquote key={idx} className={`p-4 my-2 rounded-xl border-l-[4px] leading-relaxed select-text italic ${quoteClass}`}>
+                            {text.replace(/^>\s*/, "")}
+                          </blockquote>
+                        );
+                      }
+
+                      // Header 3/4 check
+                      if (text.startsWith("###")) {
+                        return (
+                          <h3 key={idx} className={`text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-2 font-sans ${titleClass}`}>
+                            {text.replace(/^###\s*/, "")}
+                          </h3>
+                        );
+                      }
+
+                      // Header 1/2 check
+                      if (text.startsWith("##")) {
+                        return (
+                          <h2 key={idx} className={`text-2xl sm:text-3xl font-extrabold tracking-tight mt-9 mb-3 border-b pb-2 ${titleClass} border-current/10`}>
+                            {text.replace(/^##\s*/, "")}
+                          </h2>
+                        );
+                      }
+
+                      // Standard paragraph custom spacing
+                      return (
+                        <p key={idx} className="opacity-95 leading-relaxed text-justify select-text">
+                          {text}
+                        </p>
+                      );
+                    })}
+                  </div>
+
+                  <div className={`h-px w-full my-12 ${dividerClass}`} />
+
+                  {/* Interaction Block: Appreciation Clap and Share Tray */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 py-4">
+                    {/* Clap block */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleIncrementLikes}
+                        className="w-12 h-12 rounded-full cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-all shadow-md group border border-emerald-500/30"
+                        title="Beri Apresiasi Kabar (Suka / Hormat)"
+                      >
+                        <ThumbsUp className="w-5 h-5 group-hover:-rotate-12 transition-transform" />
+                      </button>
+                      <div className="text-left font-sans">
+                        <p className={`text-xs font-bold leading-none ${titleClass}`}>{currentLikes} Nahdliyin menyukai</p>
+                        <p className={`text-[10px] mt-1 ${textMutedClass}`}>Apresiasi tulisan khidmat kontributor</p>
+                      </div>
+                    </div>
+
+                    {/* Social Shares */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`text-[10px] font-bold tracking-wider mr-2 uppercase ${textMutedClass}`}>Bagikan Redaksi</span>
+                      {/* WA */}
+                      <a
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${selectedNews.title} ✨ Selengkapnya baca di: ${window.location.origin}/news/${selectedNews.id}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-full bg-[#25D366] hover:bg-[#1ebd5d] text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm font-sans"
+                        title="WhatsApp"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12.031 2c-5.511 0-9.982 4.47-9.982 9.98 0 1.95.56 3.78 1.529 5.34l-1.026 3.75 3.843-1.01c1.5.91 3.25 1.44 5.122 1.44 5.51 0 9.98-4.47 9.98-9.98C22.013 6.47 17.542 2 12.031 2zm6.657 14.15c-.27.76-1.37 1.39-1.9 1.43-.53.04-1.2-.1-3.41-.98-2.83-1.12-4.66-3.99-4.8-4.18-.14-.19-1.15-1.53-1.15-2.92 0-1.39.73-2.07 1-2.35.26-.27.53-.34.71-.34H10c.18 0 .42-.07.65.48.24.58.81 1.98.88 2.12.07.14.12.3.02.49-.1.19-.15.3-.3.48-.15.17-.32.39-.46.52-.16.15-.33.32-.14.65.19.32.85 1.4 1.83 2.27 1.25 1.11 2.3 1.45 2.63 1.62.33.16.52.12.72-.1.2-.23.88-1.02 1.12-1.37.23-.35.47-.3.8-.17.33.12 2.1.99 2.46 1.17.36.18.6.27.69.42.08.15.08.87-.2 1.63z" />
+                        </svg>
+                      </a>
+                      {/* FB */}
+                      <a
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + "/news/" + selectedNews.id)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-full bg-[#3B5998] hover:bg-[#2d4373] text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm font-sans"
+                        title="Facebook"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+                        </svg>
+                      </a>
+                      {/* Telegram */}
+                      <a
+                        href={`https://t.me/share/url?url=${encodeURIComponent(window.location.origin + "/news/" + selectedNews.id)}&text=${encodeURIComponent(selectedNews.title)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-full bg-[#0088cc] hover:bg-[#0077b3] text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm font-sans"
+                        title="Telegram"
+                      >
+                        <svg className="w-3.5 h-3.5 translate-y-[0.5px] -translate-x-[0.5px]" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.88 7.32l-1.68 7.92c-.12.56-.48.68-.96.4l-2.56-1.88-1.24 1.2c-.12.12-.24.24-.36.24l.16-2.52 4.6-4.16c.2-.16-.04-.24-.3-.08l-5.68 3.56-2.44-.76c-.52-.16-.52-.52.12-.76l9.6-3.72c.44-.16.84.12.64.96z" />
+                        </svg>
+                      </a>
+                      {/* Copy Link */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const directUrl = `${window.location.origin}/news/${selectedNews.id}`;
+                          navigator.clipboard.writeText(directUrl);
+                          setCopiedMessage("Tersalin!");
+                          setJustCopied(true);
+                          setTimeout(() => setJustCopied(false), 2000);
+                        }}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-sm relative text-white border-0 ${
+                          justCopied ? "bg-emerald-600" : "bg-neutral-500 hover:bg-neutral-600"
+                        }`}
+                        title="Salin Tautan Resmi"
+                      >
+                        {justCopied ? (
+                          <Check className="w-3.5 h-3.5" />
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                          </svg>
+                        )}
+                        {justCopied && (
+                          <span className="absolute bg-emerald-600 px-1.5 py-0.5 rounded text-[8px] font-bold text-white bottom-full mb-1 left-1/2 -translate-x-1/2 shadow whitespace-nowrap font-sans">
+                            Copied
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                {/* Comments Collapsible Form Area */}
+                <div className={`mt-10 p-5 sm:p-7 rounded-2xl border transition-colors duration-300 ${commentsBg}`}>
+                  <div className="flex justify-between items-center mb-6 select-none font-sans">
+                    <h4 className={`text-xs sm:text-sm font-black uppercase tracking-wider font-sans flex items-center gap-2 ${titleClass}`}>
+                      <span>💬</span> Kolom Diskusi ({getCommentsForArticle(selectedNews.id, selectedNews.title).length} Komentar)
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setShowCommentsSection(!showCommentsSection)}
+                      className="px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] tracking-wide active:scale-95 transition-all cursor-pointer border-0"
+                    >
+                      {showCommentsSection ? "Sembunyikan" : "Tulis Opini"}
+                    </button>
+                  </div>
+
+                  {showCommentsSection && (
+                    <div className="space-y-4 mb-6 font-sans">
+                      <textarea
+                        placeholder="Ketik komentar atau opini suportif Anda selaku kader disini..."
+                        value={newCommentText}
+                        onChange={e => setNewCommentText(e.target.value)}
+                        className={`w-full p-4 rounded-xl text-xs sm:text-sm outline-none border focus:border-emerald-500 leading-relaxed font-sans transition-all text-left ${
+                          readerTheme === "dark" ? "bg-stone-900 border-neutral-800 text-white" : "bg-white border-stone-250 text-slate-800"
+                        }`}
+                        rows={3}
+                      />
+                      <div className="flex justify-end">
                         <button
                           type="button"
                           onClick={() => handleAddComment(selectedNews.id)}
-                          className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-sm shrink-0"
+                          className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs px-4 py-2 rounded-xl transition-all shadow-sm active:scale-95 hover:scale-[1.02] cursor-pointer border-0"
                         >
-                          Kirim
+                          Kirim Komentar Positif
                         </button>
                       </div>
-
-                      {/* Comments List */}
-                      <div className="space-y-2.5 max-h-[160px] overflow-y-auto pr-1">
-                        {getCommentsForArticle(selectedNews.id, selectedNews.title).map((comment, index) => (
-                          <div key={index} className="bg-white border border-slate-100 p-2.5 rounded-lg text-left shadow-xs">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-[10px] font-bold text-slate-700">{comment.author}</span>
-                              <span className="text-[9px] text-slate-400">{comment.time}</span>
-                            </div>
-                            <p className="text-[11px] text-slate-600 leading-normal">{comment.content}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
 
-                <div className="pt-8 mt-8 border-t border-slate-100 flex justify-between items-center">
-                  <span className="text-xs text-slate-400 font-mono">
-                    ID: {selectedNews.id}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={onNewsClose}
-                    className="px-5 py-2.5 border border-slate-200 hover:border-slate-350 text-slate-705 bg-white hover:bg-slate-50 rounded-xl text-xs tracking-widest uppercase transition-colors cursor-pointer font-bold shadow-sm"
-                  >
-                    Tutup Artikel
-                  </button>
+                  {/* Render existing comments scroll stack */}
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 font-sans">
+                    {getCommentsForArticle(selectedNews.id, selectedNews.title).map((comment, index) => (
+                      <div key={index} className={`p-4 rounded-xl text-left select-text shadow-sm transition-colors duration-300 ${commentCardBg}`}>
+                        <div className="flex justify-between items-center mb-2 font-sans select-none text-[10px] sm:text-xs">
+                          <span className={`font-bold ${titleClass}`}>{comment.author}</span>
+                          <span className={textMutedClass}>{comment.time}</span>
+                        </div>
+                        <p className={`text-xs sm:text-sm leading-relaxed ${
+                          readerTheme === "light" ? "text-stone-700" : readerTheme === "sepia" ? "text-[#54432d]" : "text-neutral-300"
+                        }`}>{comment.content}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Article footer credit line */}
+                <div className={`mt-14 pt-6 border-t font-mono text-[9px] uppercase tracking-widest flex flex-wrap justify-between items-center gap-3 ${dividerClass} ${textMutedClass}`}>
+                  <span>ID: {selectedNews.id}</span>
+                  <span className="flex items-center gap-1">
+                    <Shield className="w-3.5 h-3.5 text-emerald-500" /> Jurnalisme Santri PC GP Ansor Bogor
+                  </span>
+                </div>
+              </article>
+
+              <div className="flex justify-center mt-12 select-none">
+                <button
+                  type="button"
+                  onClick={onNewsClose}
+                  className="bg-emerald-600 hover:bg-emerald-500 hover:scale-105 active:scale-95 text-white font-black tracking-widest uppercase text-xs px-8 py-3 rounded-2xl transition-all shadow-lg border border-emerald-500/20 cursor-pointer animate-pulse"
+                >
+                  Tutup Lembar Berita
+                </button>
               </div>
-            </motion.div>
+            </div>
           </div>
-        )}
+        );
+        })()}
       </AnimatePresence>
     </>
   );

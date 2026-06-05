@@ -46,7 +46,7 @@ export default function Programs({ onProgramSelect }: ProgramsProps) {
       <div className="absolute top-[40%] -left-[15%] w-[450px] h-[450px] bg-emerald-550/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[20%] -right-[10%] w-[350px] h-[350px] bg-emerald-500/5 rounded-full blur-[110px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Title Header */}
         <div className="text-center relative mb-16">

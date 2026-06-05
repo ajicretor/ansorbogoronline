@@ -27,7 +27,7 @@ export default function GallerySection() {
 
   return (
     <section id="galeri" className="py-24 bg-gradient-to-b from-white via-slate-50 to-white text-slate-800 relative overflow-hidden border-b border-slate-200/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
         <div className="text-center relative mb-12">

@@ -461,6 +461,7 @@ export default function CMSDashboard() {
   };
 
   // --- 4. NEWS STATE & CRUD ---
+  const [previewNewsItem, setPreviewNewsItem] = useState<NewsArticle | null>(null);
   const [newsForm, setNewsForm] = useState<Partial<NewsArticle>>({
     title: "", excerpt: "", content: "", date: "", category: "Pengkaderan", imageUrl: "", readTime: "", author: ""
   });
@@ -1655,23 +1656,6 @@ export default function CMSDashboard() {
               </div>
               <p className={`text-[9px] mt-1 leading-relaxed ${theme === 'dark' ? 'text-emerald-400/70' : 'text-[#0f766e]/70'}`}>Semua konten disimpan dalam penyimpanan lokal browser ini secara aman.</p>
             </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                sessionStorage.removeItem("ansor_cms_user");
-                setCurrentUser(null);
-                triggerToast("Keluar dari sesi admin berhasil.");
-              }}
-              className={`mt-3 w-full py-2.5 px-4 rounded-xl text-xs font-bold font-sans flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-sm border ${
-                theme === 'dark'
-                  ? 'border-red-900/50 bg-red-950/20 text-red-400 hover:bg-red-950 hover:text-white hover:border-red-600'
-                  : 'border-red-200 bg-red-50 text-red-650 hover:bg-red-600 hover:text-white hover:border-red-650'
-              }`}
-            >
-              <LogOut className="w-4 h-4 shrink-0" />
-              <span>KONTROL LOGOUT SESI</span>
-            </button>
           </div>
         </aside>
 
@@ -2762,14 +2746,48 @@ ON CONFLICT (username) DO NOTHING;`}
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-neutral-300">Tanggal Publikasi</label>
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-semibold text-neutral-300">Tanggal Publikasi</label>
+                        <span className="text-[10px] text-emerald-400 font-mono font-bold">{newsForm.date || ""}</span>
+                      </div>
                       <input
-                        type="text"
+                        type="date"
                         required
-                        value={newsForm.date}
-                        onChange={e => setNewsForm({ ...newsForm, date: e.target.value })}
-                        className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
-                        placeholder="24 Mei 2026"
+                        value={(() => {
+                          const val = newsForm.date || "";
+                          if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+                          
+                          // Parse "5 Juni 2026"
+                          const parts = val.split(" ");
+                          if (parts.length >= 3) {
+                            const d = parts[0];
+                            const m = parts[1].toLowerCase();
+                            const y = parts[2];
+                            const mNames: { [key: string]: string } = {
+                              januari: "01", pebruari: "02", febuari: "02", februari: "02", maret: "03", april: "04", mei: "05", juni: "06", juli: "07", agustus: "08", september: "09", oktober: "10", november: "11", nopember: "11", desember: "12"
+                            };
+                            const mm = mNames[m] || "01";
+                            const dd = d.padStart(2, "0");
+                            return `${y}-${mm}-${dd}`;
+                          }
+                          try {
+                            const dObj = new Date();
+                            return dObj.toISOString().split("T")[0];
+                          } catch (e) {
+                            return "";
+                          }
+                        })()}
+                        onChange={e => {
+                          const dateObj = new Date(e.target.value);
+                          if (!isNaN(dateObj.getTime())) {
+                            setNewsForm({
+                              ...newsForm,
+                              date: dateObj.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+                            });
+                          }
+                        }}
+                        className="w-full bg-[#020d04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                        title="Pilih tanggal publikasi berita (bisa mundur atau maju)"
                       />
                     </div>
 
@@ -2865,7 +2883,33 @@ ON CONFLICT (username) DO NOTHING;`}
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-white/5 flex justify-end gap-3">
+                  <div className="pt-3 border-t border-white/5 flex flex-wrap justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!newsForm.title) {
+                          triggerToast("Tulis judul berita terlebih dahulu untuk pratinjau!", "error");
+                          return;
+                        }
+                        const draftedArticle: NewsArticle = {
+                          id: newsForm.id || "preview-draft-id",
+                          title: newsForm.title || "Draf Judul Berita Utama",
+                          excerpt: newsForm.excerpt || "Ini draf ringkasan isi berita yang akan dipublish...",
+                          content: newsForm.content || "Ini draf konten berita utama. Silakan ketik isi naskah di kolom isi editor.",
+                          category: newsForm.category || "Pengkaderan",
+                          imageUrl: newsForm.imageUrl || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
+                          author: newsForm.author || "Kontributor Ansor",
+                          date: newsForm.date || "Hari Ini",
+                          readTime: newsForm.readTime || "3 Menit Baca"
+                        };
+                        setPreviewNewsItem(draftedArticle);
+                      }}
+                      className="px-4 py-2 border border-amber-500/30 hover:border-amber-500 text-amber-300 hover:text-amber-100 bg-amber-950/20 hover:bg-amber-950/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Lihat Pratinjau Tampilan Berita Lengkap Terupdate"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Pratinjau Redaksi
+                    </button>
                     <button
                       type="button"
                       onClick={cancelEdit}

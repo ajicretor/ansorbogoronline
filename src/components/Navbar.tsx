@@ -75,7 +75,7 @@ export default function Navbar({ onJoinClick }: NavbarProps) {
             : "bg-gradient-to-b from-white/90 via-white/50 to-transparent py-5"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           
           {/* LOGO AREA */}

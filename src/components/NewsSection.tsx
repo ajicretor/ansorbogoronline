@@ -33,7 +33,7 @@ export default function NewsSection({ onNewsSelect }: NewsSectionProps) {
 
   return (
     <section id="berita" className="py-24 bg-gradient-to-b from-white to-slate-50 text-slate-800 relative border-b border-slate-200/40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
         <div className="text-center relative mb-12">

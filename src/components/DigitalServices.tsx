@@ -21,7 +21,7 @@ export default function DigitalServices() {
       <div className="absolute top-[30%] -right-[10%] w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[20%] -left-[10%] w-[350px] h-[350px] bg-teal-500/5 rounded-full blur-[110px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
         <div className="text-center relative mb-16 select-none">
@@ -37,7 +37,7 @@ export default function DigitalServices() {
         </div>
 
         {/* Services Grid Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-[1380px] mx-auto">
           
           {/* SERVICE CARD 1: KADERISASI PRESENSI */}
           {menuStatus.kaderisasi && (
