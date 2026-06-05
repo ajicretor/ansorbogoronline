@@ -41,7 +41,8 @@ export default function CMSDashboard() {
     syncFromSupabase,
     setIsCmsOpen,
     theme,
-    toggleTheme
+    toggleTheme,
+    lastSyncError
   } = useCMS();
 
   // --- LOGIN & AUTHENTICATION STATES ---
@@ -1631,6 +1632,181 @@ export default function CMSDashboard() {
         {/* WORKSPACE AREA */}
         <main className={`${theme === 'light' ? 'cms-main-workspace' : ''} flex-grow p-6 md:p-8 overflow-y-auto max-h-[calc(100vh-73px)] relative z-10`}>
           
+          {/* BANNER NOTIFIKASI SINKRONISASI & ASISTEN SUPABASE */}
+          <div className="mb-6 space-y-4">
+            {lastSyncError && (
+              <div className="bg-red-50 border border-red-200 text-red-900 text-xs p-4 rounded-2xl font-medium leading-relaxed text-left flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm">
+                <div className="flex items-start gap-2.5">
+                  <span className="text-sm shrink-0 mt-0.5">🚨</span>
+                  <div>
+                    <h5 className="font-bold text-red-950 text-[12px] uppercase tracking-wide">Peringatan: Gagal Menulis ke Cloud Database Supabase!</h5>
+                    <p className="text-slate-600 mt-1 text-[11px] leading-relaxed">
+                      Perubahan yang Anda buat baru saja disimpan secara lokal di browser perangkat Anda, namun <span className="font-bold text-red-800">gagal disimpan di Server Clouddb Supabase</span>. Ini berarti perangkat lain (seperti Safari, handphone lain, dll) belum bisa melihat berita terupdate ini sampai struktur tabel Anda dipulihkan.
+                    </p>
+                    <p className="font-mono text-[10px] text-red-700 bg-red-100/50 px-2.3 py-1 rounded-xl mt-2 inline-block">
+                      {lastSyncError}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSqlExpanded(true)}
+                  className="px-4 py-2 bg-red-650 hover:bg-red-700 hover:shadow-md hover:shadow-red-500/10 text-white font-bold rounded-xl text-[11px] whitespace-nowrap self-start md:self-center transition-all cursor-pointer transform active:scale-95 shrink-0"
+                >
+                  Lihat Solusi SQL &raquo;
+                </button>
+              </div>
+            )}
+
+            {/* EXPANDABLE SQL ASSISTANT */}
+            <div className={`border rounded-2xl transition-all duration-300 shadow-sm ${
+              isSqlExpanded 
+                ? "bg-slate-900 border-[#1e293b] text-slate-100 p-6 text-left"
+                : "bg-emerald-50/60 border-emerald-250 text-emerald-950 p-4 leading-relaxed text-xs text-left"
+            }`}>
+              {!isSqlExpanded ? (
+                <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-sm shrink-0">💡</span>
+                    <p className="text-[11px] sm:text-xs text-emerald-950">
+                      <span className="font-bold">Tips Sinkronisasi Ril:</span> Pastikan Anda sudah membuat tabel <code className="bg-emerald-100 px-1.5 py-0.5 rounded font-mono font-bold text-emerald-900 text-[11px]">ansor_bogor_cms</code> dan mengaktifkan RLS Policies di Supabase Anda agar berita otomatis terupdate ke safari/chrome di seluruh HP handphone &amp; laptop lain!
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsSqlExpanded(true)}
+                    className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl text-[11px] whitespace-nowrap transition-all cursor-pointer shadow-sm"
+                  >
+                    Buka Panduan SQL Setup
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4 font-sans">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-emerald-400">⚡</span>
+                      <h4 className="font-bold text-xs tracking-wide uppercase text-white font-display">Asisten Pemulihan &amp; Setup Database Supabase</h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsSqlExpanded(false)}
+                      className="text-[11px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Tutup
+                    </button>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Sistem web PC GP Ansor Kabupaten Bogor menggunakan pendekatan <span className="text-emerald-400 font-semibold">Offline-first (LocalStorage)</span> sekaligus menyinkronkan data secara <span className="text-emerald-400 font-semibold">Real-time ke cloud database Supabase</span>. Agar perubahan berita di browser Anda langsung tampil pada Safari, Chrome, atau perangkat pimpinan/pengunjung lainnya secara instan, Anda hanya perlu menyalin script SQL di bawah ini dan menjalankannya sekali saja di panel Supabase Anda.
+                  </p>
+
+                  <div className="space-y-2">
+                    <h5 className="font-bold text-[11px] text-white flex items-center gap-1.5">
+                      <span>Langkah Memasang Basis Data Ril:</span>
+                    </h5>
+                    <ol className="list-decimal list-inside text-[11px] text-slate-350 space-y-1.5 pl-1 leading-relaxed">
+                      <li>Buka Dashboard proyek <a href="https://supabase.com" target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline inline-flex items-center gap-0.5 font-bold">Supabase (supabase.com)</a> milik Anda.</li>
+                      <li>Di menu sebelah kiri, masuk ke bagian <span className="font-bold text-white font-mono bg-slate-800 px-1 py-0.5 rounded">SQL Editor</span>.</li>
+                      <li>Klik <span className="font-bold text-white font-mono bg-slate-800 px-1 py-0.5 rounded">New Query +</span> dan tempelkan (paste) script SQL di bawah ini.</li>
+                      <li>Klik tombol hijau <span className="font-bold text-emerald-400 font-mono bg-[#022A12] px-2.5 py-1 rounded border border-emerald-900 cursor-pointer">Run</span> di pojok kanan atas. Selesai!</li>
+                    </ol>
+                  </div>
+
+                  {/* SQL CODE VIEWER */}
+                  <div className="relative rounded-xl border border-slate-800 overflow-hidden bg-[#060a08]/90">
+                    <div className="flex items-center justify-between bg-slate-950 px-4 py-2 text-[10px] text-slate-400 border-b border-slate-850">
+                      <span className="font-mono text-[9px]">setup_cms_and_users.sql</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const sqlCode = `-- 1. BUAT TABEL CMS KONTEN UTAMA\nCREATE TABLE IF NOT EXISTS public.ansor_bogor_cms (\n    key text PRIMARY KEY,\n    value jsonb DEFAULT '{}'::jsonb,\n    updated_at timestamp with time zone DEFAULT now()\n);\n\n-- AKTIFKAN ATURAN KEAMANAN ROW LEVEL SECURITY (RLS)\nALTER TABLE public.ansor_bogor_cms ENABLE ROW LEVEL SECURITY;\n\n-- BUAT POLICIES SUPABASE AGAR DATA BISA DI-UPDATE LANGSUNG DARI WEB\nDROP POLICY IF EXISTS "Allow public read access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public read access to CMS data" \n    ON public.ansor_bogor_cms FOR SELECT USING (true);\n\nDROP POLICY IF EXISTS "Allow public insert access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public insert access to CMS data" \n    ON public.ansor_bogor_cms FOR INSERT WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public update access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public update access to CMS data" \n    ON public.ansor_bogor_cms FOR UPDATE USING (true) WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public delete access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public delete access to CMS data" \n    ON public.ansor_bogor_cms FOR DELETE USING (true);\n\n\n-- 2. BUAT TABEL AKUN PENGGUNA CMS KUSTOM\nCREATE TABLE IF NOT EXISTS public.ansor_bogor_users (\n    username text PRIMARY KEY,\n    password text NOT NULL,\n    name text NOT NULL,\n    role text NOT NULL DEFAULT 'sekretariat',\n    created_at timestamp with time zone DEFAULT now()\n);\n\n-- AKTIFKAN ATURAN KEAMANAN ROW LEVEL SECURITY (RLS)\nALTER TABLE public.ansor_bogor_users ENABLE ROW LEVEL SECURITY;\n\n-- BUAT POLICIES BAGI TABEL PENGGUNA\nDROP POLICY IF EXISTS "Allow public select access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public select access to Users data" \n    ON public.ansor_bogor_users FOR SELECT USING (true);\n\nDROP POLICY IF EXISTS "Allow public insert/update access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public insert/update access to Users data" \n    ON public.ansor_bogor_users FOR INSERT WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public modify access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public modify access to Users data" \n    ON public.ansor_bogor_users FOR UPDATE USING (true) WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public delete access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public delete access to Users data" \n    ON public.ansor_bogor_users FOR DELETE USING (true);\n\n\n-- 3. SISIPKAN AKUN ADMIN DEFAULT DAN SEKRETARIAT KONDISIONAL\nINSERT INTO public.ansor_bogor_users (username, password, name, role)\nVALUES \n    ('admin', 'adminansor1934', 'Septa Aji', 'superadmin'),\n    ('sekretariat', 'sekretariat1934', 'Sekretariat Cabang', 'sekretariat')\nON CONFLICT (username) DO NOTHING;`;
+                          navigator.clipboard.writeText(sqlCode);
+                          setCopiedSql(true);
+                          triggerToast("Script SQL berhasil disalin ke clipboard!");
+                          setTimeout(() => setCopiedSql(false), 3000);
+                        }}
+                        className="px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-350 hover:text-white rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 font-bold"
+                      >
+                        {copiedSql ? "Tersalin!" : "Salin Kode SQL"}
+                      </button>
+                    </div>
+                    <pre className="p-4 overflow-x-auto text-[10px] font-mono text-emerald-400 leading-relaxed text-left max-h-[180px]">
+{`-- 1. BUAT TABEL CMS KONTEN UTAMA
+CREATE TABLE IF NOT EXISTS public.ansor_bogor_cms (
+    key text PRIMARY KEY,
+    value jsonb DEFAULT '{}'::jsonb,
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+-- AKTIFKAN ATURAN KEAMANAN ROW LEVEL SECURITY (RLS)
+ALTER TABLE public.ansor_bogor_cms ENABLE ROW LEVEL SECURITY;
+
+-- BUAT POLICIES SUPABASE AGAR DATA BISA DI-UPDATE LANGSUNG DARI WEB
+DROP POLICY IF EXISTS "Allow public read access to CMS data" ON public.ansor_bogor_cms;
+CREATE POLICY "Allow public read access to CMS data" 
+    ON public.ansor_bogor_cms FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public insert access to CMS data" ON public.ansor_bogor_cms;
+CREATE POLICY "Allow public insert access to CMS data" 
+    ON public.ansor_bogor_cms FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public update access to CMS data" ON public.ansor_bogor_cms;
+CREATE POLICY "Allow public update access to CMS data" 
+    ON public.ansor_bogor_cms FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public delete access to CMS data" ON public.ansor_bogor_cms;
+CREATE POLICY "Allow public delete access to CMS data" 
+    ON public.ansor_bogor_cms FOR DELETE USING (true);
+
+
+-- 2. BUAT TABEL AKUN PENGGUNA CMS KUSTOM
+CREATE TABLE IF NOT EXISTS public.ansor_bogor_users (
+    username text PRIMARY KEY,
+    password text NOT NULL,
+    name text NOT NULL,
+    role text NOT NULL DEFAULT 'sekretariat',
+    created_at timestamp with time zone DEFAULT now()
+);
+
+-- AKTIFKAN ATURAN KEAMANAN ROW LEVEL SECURITY (RLS)
+ALTER TABLE public.ansor_bogor_users ENABLE ROW LEVEL SECURITY;
+
+-- BUAT POLICIES BAGI TABEL PENGGUNA
+DROP POLICY IF EXISTS "Allow public select access to Users data" ON public.ansor_bogor_users;
+CREATE POLICY "Allow public select access to Users data" 
+    ON public.ansor_bogor_users FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public insert/update access to Users data" ON public.ansor_bogor_users;
+CREATE POLICY "Allow public insert/update access to Users data" 
+    ON public.ansor_bogor_users FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public modify access to Users data" ON public.ansor_bogor_users;
+CREATE POLICY "Allow public modify access to Users data" 
+    ON public.ansor_bogor_users FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public delete access to Users data" ON public.ansor_bogor_users;
+CREATE POLICY "Allow public delete access to Users data" 
+    ON public.ansor_bogor_users FOR DELETE USING (true);
+
+
+-- 3. SISIPKAN AKUN ADMIN DEFAULT DAN SEKRETARIAT KONDISIONAL
+INSERT INTO public.ansor_bogor_users (username, password, name, role)
+VALUES 
+    ('admin', 'adminansor1934', 'Septa Aji', 'superadmin'),
+    ('sekretariat', 'sekretariat1934', 'Sekretariat Cabang', 'sekretariat')
+ON CONFLICT (username) DO NOTHING;`}
+                    </pre>
+                  </div>
+                  
+                  <div className="bg-slate-950 p-3 rounded-xl text-[11px] leading-relaxed text-slate-400 border border-slate-850 flex items-start gap-2">
+                    <span className="text-xs">💡</span>
+                    <p>Setelah Anda menjalankan SQL di atas, silakan klik tombol <span className="font-bold text-white border-b border-white border-dashed">Database: Terhubung / Offline</span> di header halaman ini untuk memicu penarikan data awal. Perubahan dari kontributor, perangkat mana pun akan langsung tersimpan di cloud serta sinkron di Safari, Chrome, Android &amp; Desktop lainnya secara instan!</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* TAB 1: HERO CONFIG & IMPACT STATS */}
           {activeTab === "general" && (
             <div className="max-w-4xl space-y-8 text-left">

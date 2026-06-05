@@ -81,6 +81,8 @@ interface CMSContextType {
   setIsCmsOpen: (open: boolean) => void;
   theme: "light" | "dark";
   toggleTheme: () => void;
+  lastSyncError: string | null;
+  setLastSyncError: (err: string | null) => void;
 }
 
 
@@ -452,6 +454,24 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
     return localStorage.getItem("ansor_bogor_official_kaderisasi_pamphlet") || "";
   });
 
+  // 1.5 Sync states and helpers
+  const [lastSyncError, setLastSyncError] = useState<string | null>(null);
+
+  const saveKeyToSupabase = async (key: string, value: any) => {
+    try {
+      const res = await setSupabaseCMSData(key, value);
+      if (!res.success) {
+        const errMsg = res.error?.message || res.error?.details || JSON.stringify(res.error) || "Disegel oleh RLS atau tabel tidak ada";
+        setLastSyncError(`Gagal sinkron data '${key}' ke Supabase. Detail: ${errMsg}`);
+        console.error(`Supabase write failed for ${key}:`, res.error);
+      } else {
+        setLastSyncError(null);
+      }
+    } catch (e: any) {
+      setLastSyncError(`Sistem gagal menghubungi server Supabase: ${e.message || e}`);
+    }
+  };
+
   // 2. Load fresh data from Supabase asynchronously in background and cache it
   const syncFromSupabase = async (): Promise<boolean> => {
     try {
@@ -630,109 +650,109 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
   const setHeroConfig = (newVal: HeroConfig) => {
     setHeroConfigState(newVal);
     localStorage.setItem("ansor_bogor_hero", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_hero", newVal);
+    saveKeyToSupabase("ansor_bogor_hero", newVal);
   };
 
   const setAboutConfig = (newVal: AboutConfig) => {
     setAboutConfigState(newVal);
     localStorage.setItem("ansor_bogor_about", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_about", newVal);
+    saveKeyToSupabase("ansor_bogor_about", newVal);
   };
 
   const setStrategicPillars = (newVal: StrategicPillar[]) => {
     setStrategicPillarsState(newVal);
     localStorage.setItem("ansor_bogor_pillars", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_pillars", newVal);
+    saveKeyToSupabase("ansor_bogor_pillars", newVal);
   };
 
   const setImpactStats = (newVal: ImpactStat[]) => {
     setImpactStatsState(newVal);
     localStorage.setItem("ansor_bogor_stats", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_stats", newVal);
+    saveKeyToSupabase("ansor_bogor_stats", newVal);
   };
 
   const setContactConfig = (newVal: ContactConfig) => {
     setContactConfigState(newVal);
     localStorage.setItem("ansor_bogor_contact", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_contact", newVal);
+    saveKeyToSupabase("ansor_bogor_contact", newVal);
   };
 
   const setAdsConfig = (newVal: AdsConfig) => {
     setAdsConfigState(newVal);
     localStorage.setItem("ansor_bogor_ads", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_ads", newVal);
+    saveKeyToSupabase("ansor_bogor_ads", newVal);
   };
 
   const setFaqs = (newVal: FAQItem[]) => {
     setFaqsState(newVal);
     localStorage.setItem("ansor_bogor_faqs", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_faqs", newVal);
+    saveKeyToSupabase("ansor_bogor_faqs", newVal);
   };
 
   const setPrograms = (newVal: ProgramItem[]) => {
     setProgramsState(newVal);
     localStorage.setItem("ansor_bogor_programs", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_programs", newVal);
+    saveKeyToSupabase("ansor_bogor_programs", newVal);
   };
 
   const setNews = (newVal: NewsArticle[]) => {
     setNewsState(newVal);
     localStorage.setItem("ansor_bogor_news", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_news", newVal);
+    saveKeyToSupabase("ansor_bogor_news", newVal);
   };
 
   const setLeaders = (newVal: TeamMember[]) => {
     setLeadersState(newVal);
     localStorage.setItem("ansor_bogor_leaders", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_leaders", newVal);
+    saveKeyToSupabase("ansor_bogor_leaders", newVal);
   };
 
   const setGallery = (newVal: GalleryItem[]) => {
     setGalleryState(newVal);
     localStorage.setItem("ansor_bogor_gallery", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_gallery", newVal);
+    saveKeyToSupabase("ansor_bogor_gallery", newVal);
   };
 
   const setDigitalServices = (newVal: DigitalServicesState) => {
     setDigitalServicesState(newVal);
     localStorage.setItem("ansor_bogor_digital_services", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_digital_services", newVal);
+    saveKeyToSupabase("ansor_bogor_digital_services", newVal);
   };
 
   const setMenuStatus = (newVal: MenuStatus) => {
     setMenuStatusState(newVal);
     localStorage.setItem("ansor_bogor_menu_status", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_menu_status", newVal);
+    saveKeyToSupabase("ansor_bogor_menu_status", newVal);
   };
 
   const setMenuLabels = (newVal: MenuLabels) => {
     setMenuLabelsState(newVal);
     localStorage.setItem("ansor_bogor_menu_labels", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_menu_labels", newVal);
+    saveKeyToSupabase("ansor_bogor_menu_labels", newVal);
   };
 
   const setUsers = (newVal: CMSUser[]) => {
     setUsersState(newVal);
     localStorage.setItem("ansor_bogor_users", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_users", newVal);
+    saveKeyToSupabase("ansor_bogor_users", newVal);
   };
 
   const setKaderisasiData = (newVal: KaderisasiRow[]) => {
     setKaderisasiDataState(newVal);
     localStorage.setItem("ansor_bogor_kaderisasi", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_kaderisasi", newVal);
+    saveKeyToSupabase("ansor_bogor_kaderisasi", newVal);
   };
 
   const setRegistrantsData = (newVal: Registrant[]) => {
     setRegistrantsDataState(newVal);
     localStorage.setItem("ansor_bogor_registrants", JSON.stringify(newVal));
-    setSupabaseCMSData("ansor_bogor_registrants", newVal);
+    saveKeyToSupabase("ansor_bogor_registrants", newVal);
   };
 
   const setOfficialPamphlet = (newVal: string) => {
     setOfficialPamphletState(newVal);
     localStorage.setItem("ansor_bogor_official_kaderisasi_pamphlet", newVal);
-    setSupabaseCMSData("ansor_bogor_official_kaderisasi_pamphlet", newVal);
+    saveKeyToSupabase("ansor_bogor_official_kaderisasi_pamphlet", newVal);
   };
 
   // Helper method to publish all current values to Supabase at once (useful for initial seeding)
@@ -899,6 +919,8 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
         setIsCmsOpen,
         theme,
         toggleTheme,
+        lastSyncError,
+        setLastSyncError,
       }}
     >
       {children}
