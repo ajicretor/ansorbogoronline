@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import dns from "dns";
 import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
+import { createClient } from "@supabase/supabase-js";
 
 // Set default DNS resolution to ipv4first to avoid dual-stack host resolution issues
 if (dns.setDefaultResultOrder) {
@@ -464,17 +465,16 @@ Gunakan salam hangat sahabat pemuda Ansor ("Halo Sahabat!", "Assalamu'alaikum wr
       
       if (cleanUrl && cleanKey) {
         try {
-          const fetchRes = await fetch(`${cleanUrl}/rest/v1/ansor_bogor_cms?key=eq.ansor_bogor_news&select=value`, {
-            headers: {
-              "apikey": cleanKey,
-              "Authorization": `Bearer ${cleanKey}`
-            }
-          });
-          if (fetchRes.ok) {
-            const dbData = await fetchRes.json();
-            if (Array.isArray(dbData) && dbData.length > 0 && dbData[0].value) {
-              newsList = dbData[0].value;
-            }
+          const supabase = createClient(cleanUrl, cleanKey);
+          const { data: dbData, error } = await supabase
+            .from('ansor_bogor_cms')
+            .select('value')
+            .eq('key', 'ansor_bogor_news');
+            
+          if (error) {
+            console.warn("Supabase SDK query warning in server.ts:", error.message);
+          } else if (Array.isArray(dbData) && dbData.length > 0 && dbData[0].value) {
+            newsList = dbData[0].value;
           }
         } catch (dbErr) {
           console.error("Failed to query live news from Supabase for preview generation:", dbErr);
@@ -525,8 +525,9 @@ Gunakan salam hangat sahabat pemuda Ansor ("Halo Sahabat!", "Assalamu'alaikum wr
         const title = foundArticle.title;
         const description = foundArticle.excerpt || foundArticle.description || foundArticle.content || "Media syi'ar dakwah virtual PC GP Ansor Kabupaten Bogor.";
         let imageUrl = foundArticle.imageUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1080&auto=format&fit=crop";
-        if (imageUrl.startsWith("/")) {
-          imageUrl = `https://${req.get('host')}${imageUrl}`;
+        if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
+          const cleanImgPath = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+          imageUrl = `https://${req.get('host')}${cleanImgPath}`;
         }
         const pageUrl = `https://${req.get('host')}/news/${newsId}`;
         

@@ -1571,7 +1571,7 @@ export default function Modals({
                       <span className={`text-[10px] font-bold tracking-wider mr-2 uppercase ${textMutedClass}`}>Bagikan Redaksi</span>
                       {/* WA */}
                       <a
-                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${selectedNews.title} ✨ Selengkapnya baca di: ${window.location.origin}/news/${selectedNews.id}`)}`}
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`[KABAR NU] PC GP Ansor Kabupaten Bogor:\n"${selectedNews.title}"\n\nBaca laporan selengkapnya di portal resmi:\n${window.location.origin}/news/${selectedNews.id}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-8 h-8 rounded-full bg-[#25D366] hover:bg-[#1ebd5d] text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm font-sans"

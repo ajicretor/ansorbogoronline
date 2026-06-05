@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
@@ -54,24 +55,23 @@ async function run() {
 
   if (cleanUrl && cleanKey) {
     try {
-      console.log(`📡 Connecting to Supabase at: ${cleanUrl} to fetch live news feed...`);
-      const res = await fetch(`${cleanUrl}/rest/v1/ansor_bogor_cms?key=eq.ansor_bogor_news&select=value`, {
-        headers: {
-          "apikey": cleanKey,
-          "Authorization": `Bearer ${cleanKey}`
-        }
-      });
-      if (res.ok) {
-        const dbData = await res.json();
-        if (Array.isArray(dbData) && dbData.length > 0 && dbData[0].value) {
-          const liveArticles = dbData[0].value;
-          if (Array.isArray(liveArticles) && liveArticles.length > 0) {
-            console.log(`✅ Loaded ${liveArticles.length} live articles from Supabase!`);
-            articles = liveArticles;
-          }
+      console.log(`📡 Connecting to Supabase at: ${cleanUrl} to fetch live news feed via SDK...`);
+      const supabase = createClient(cleanUrl, cleanKey);
+      const { data: dbData, error } = await supabase
+        .from('ansor_bogor_cms')
+        .select('value')
+        .eq('key', 'ansor_bogor_news');
+
+      if (error) {
+        console.warn(`⚠️ Supabase SDK query warning:`, error.message);
+      } else if (Array.isArray(dbData) && dbData.length > 0 && dbData[0].value) {
+        const liveArticles = dbData[0].value;
+        if (Array.isArray(liveArticles) && liveArticles.length > 0) {
+          console.log(`✅ Loaded ${liveArticles.length} live articles from Supabase!`);
+          articles = liveArticles;
         }
       } else {
-        console.warn(`⚠️ Supabase fetch was not OK: ${res.statusText}. Using fallback news assets.`);
+        console.warn(`⚠️ Supabase returned empty or invalid news data. Using fallback news assets.`);
       }
     } catch (e) {
       console.warn("⚠️ Could not connect to Supabase database for news. Using default news list. Reason:", e.message);
@@ -104,11 +104,12 @@ async function run() {
     let imageUrl = article.imageUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1080&auto=format&fit=crop";
 
     // Handle relative images (ensure absolute for bots)
-    if (imageUrl.startsWith("/")) {
-      imageUrl = `https://ansorbogoronline.or.id${imageUrl}`;
+    if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
+      const cleanImgPath = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+      imageUrl = `https://www.ansorbogoronline.or.id${cleanImgPath}`;
     }
 
-    const hostUrl = `https://ansorbogoronline.or.id/news/${article.id}`;
+    const hostUrl = `https://www.ansorbogoronline.or.id/news/${article.id}`;
 
     // Custom tags replacement
     let newsHtml = basePageHtml
