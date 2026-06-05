@@ -1526,7 +1526,7 @@ export default function CMSDashboard() {
       </header>
 
       {/* COMPACT DASHBOARD GRID CONTAINER */}
-      <div className="flex flex-grow flex-col md:flex-row overflow-hidden relative z-10">
+      <div className="flex flex-grow flex-col md:flex-row overflow-hidden relative z-10 md:h-[calc(100vh-73px)]">
         
         {/* SIDE BAR NAVIGATION - 7 CUSTOM MODULES MATCHING LANDING PAGE */}
         <aside className={`w-full md:w-64 border-b md:border-b-0 md:border-r p-4 flex flex-col justify-between shadow-xs transition-colors duration-300 ${
@@ -1534,106 +1534,158 @@ export default function CMSDashboard() {
             ? 'border-emerald-950/60 bg-[#011406]/90'
             : 'border-emerald-200/80 bg-[#f0fdf4]/50 backdrop-blur-md'
         }`}>
-          <div className="space-y-1.5 select-none">
-            <p className={`text-[10px] uppercase font-mono tracking-widest font-extrabold px-2 mb-2 transition-colors ${theme === 'dark' ? 'text-emerald-400' : 'text-[#0f766e]'}`}>Menu Kelola Konten</p>
-            
+          <div className="space-y-4 select-none flex-grow md:overflow-y-auto md:pr-1 custom-scrollbar">
             {[
-              { key: "general" as const, label: "Branding & Hero", icon: Sparkles },
-              { key: "about" as const, label: "Tentang & Pilar", icon: Compass },
-              { key: "programs" as const, label: "Program Kerja", icon: LayoutGrid },
-              { key: "registrants" as const, label: "Calon Anggota", icon: ShieldCheck },
-              { key: "news" as const, label: "Berita (News)", icon: FileText },
-              { key: "gallery" as const, label: "Galeri Kegiatan", icon: ImageIcon },
-              { key: "leaders" as const, label: "Dewan Pimpinan", icon: Users },
-              { key: "contact" as const, label: "Kontak & Footer", icon: MapPin },
-              { key: "services" as const, label: "Layanan Digital", icon: Smartphone },
-              { key: "analytics" as const, label: "Monitor Pembaca", icon: Activity },
-              { key: "users" as const, label: "Label Navigasi", icon: Sliders }
-            ].map((tabItem) => {
-              const TabIcon = tabItem.icon;
-              const isEnabled = menuStatus[tabItem.key] !== false;
-              const isSelected = activeTab === tabItem.key;
-              
-              const isTabPermitted = isSuperAdmin || (currentUser && rolePermissions[currentUser.role]?.includes(tabItem.key));
-              
-              if (!isTabPermitted) return null;
-              
+              {
+                id: "profil-branding",
+                title: "PROFIL & BRANDING",
+                items: [
+                  { key: "general" as const, label: "Branding & Hero", icon: Sparkles },
+                  { key: "about" as const, label: "Tentang & Pilar", icon: Compass },
+                  { key: "leaders" as const, label: "Dewan Pimpinan", icon: Users },
+                ]
+              },
+              {
+                id: "publikasi-kegiatan",
+                title: "PUBLIKASI & HISTORI",
+                items: [
+                  { key: "news" as const, label: "Berita (News)", icon: FileText },
+                  { key: "gallery" as const, label: "Galeri Kegiatan", icon: ImageIcon },
+                  { key: "programs" as const, label: "Program Kerja", icon: LayoutGrid },
+                ]
+              },
+              {
+                id: "kaderisasi-layanan",
+                title: "KADERISASI & LAYANAN",
+                items: [
+                  { key: "registrants" as const, label: "Calon Anggota", icon: ShieldCheck },
+                  { key: "services" as const, label: "Layanan Digital", icon: Smartphone },
+                ]
+              },
+              {
+                id: "analisis-konfig",
+                title: "SETTING & MONITOR",
+                items: [
+                  { key: "contact" as const, label: "Kontak & Footer", icon: MapPin },
+                  { key: "analytics" as const, label: "Monitor Pembaca", icon: Activity },
+                  { key: "users" as const, label: "Label Navigasi", icon: Sliders },
+                ]
+              }
+            ].map((section) => {
+              // Filter out items in the section that are NOT permitted for current user
+              const permittedItems = section.items.filter(tabItem => {
+                return isSuperAdmin || (currentUser && rolePermissions[currentUser.role]?.includes(tabItem.key));
+              });
+
+              if (permittedItems.length === 0) return null;
+
               return (
-                <div key={tabItem.key} className="relative group/nav">
-                  <button
-                    disabled={!isTabPermitted}
-                    onClick={() => { 
-                      setActiveTab(tabItem.key); 
-                      cancelEdit(); 
-                    }}
-                    className={`w-full text-left pl-3.5 pr-11 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all ${
-                      isSelected 
-                        ? theme === 'dark'
-                          ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/25 border border-emerald-500/30 text-emerald-300 shadow-sm font-bold scale-[1.01]"
-                          : "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 text-emerald-800 shadow-sm font-bold scale-[1.01]" 
-                        : isTabPermitted
-                          ? theme === 'dark'
-                            ? "text-emerald-100/75 hover:text-white hover:bg-emerald-950/40 border border-transparent cursor-pointer"
-                            : "text-emerald-850 hover:text-emerald-955 hover:bg-emerald-100/60 border border-transparent cursor-pointer"
-                          : "text-slate-350 border border-transparent cursor-not-allowed opacity-[0.3]"
-                    }`}
-                    title={!isTabPermitted ? "Akses Terbatas: Hanya Super Admin" : ""}
-                  >
-                    <TabIcon className={`w-4 h-4 ${
-                      isSelected 
-                        ? "text-emerald-500" 
-                        : isTabPermitted 
-                          ? theme === 'dark' ? "text-emerald-400/80" : "text-emerald-500/60 font-medium" 
-                          : "text-emerald-300"
-                    }`} />
-                    <span className="truncate">{tabItem.label}</span>
-                  </button>
+                <div key={section.id} className="space-y-1 text-left">
+                  <p className={`text-[9px] uppercase font-mono tracking-widest font-extrabold px-3 py-1 mt-2.5 transition-colors ${
+                    theme === 'dark' ? 'text-emerald-400/80 border-b border-emerald-950/40 pb-1 mb-1.5' : 'text-emerald-800/80 border-b border-emerald-100/60 pb-1 mb-1.5'
+                  }`}>
+                    {section.title}
+                  </p>
                   
-                  {true && (
-                    <button
-                      type="button"
-                      disabled={!isSuperAdmin}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!isSuperAdmin) return;
-                        const nextVal = !menuStatus[tabItem.key];
-                        setMenuStatus({ ...menuStatus, [tabItem.key]: nextVal });
-                        triggerToast(`Menu ${tabItem.label} berhasil ${nextVal ? 'diaktifkan' : 'dinonaktifkan'}!`);
-                      }}
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg flex items-center justify-center transition-all border shrink-0 ${
-                        !isSuperAdmin
-                          ? "bg-emerald-50 text-emerald-300 border-emerald-200/50 cursor-not-allowed"
-                          : isEnabled 
-                            ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200 cursor-pointer" 
-                            : "bg-red-50 hover:bg-red-100 text-red-600 border-red-200 cursor-pointer"
-                      }`}
-                      title={!isSuperAdmin ? "Hanya Super Admin yang dapat mengubah status aktifasi seksi" : `${tabItem.label}: ${isEnabled ? 'Aktif di Publik (Klik untuk Matikan)' : 'Nonaktif di Publik (Klik untuk Aktifkan)'}`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${!isSuperAdmin ? "bg-emerald-200" : isEnabled ? "bg-emerald-500" : "bg-red-500"}`} />
-                    </button>
-                  )}
+                  {permittedItems.map((tabItem) => {
+                    const TabIcon = tabItem.icon;
+                    const isEnabled = menuStatus[tabItem.key] !== false;
+                    const isSelected = activeTab === tabItem.key;
+                    
+                    return (
+                      <div key={tabItem.key} className="relative group/nav">
+                        <button
+                          disabled={false}
+                          onClick={() => { 
+                            setActiveTab(tabItem.key); 
+                            cancelEdit(); 
+                          }}
+                          className={`w-full text-left pl-3.5 pr-11 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all ${
+                            isSelected 
+                              ? theme === 'dark'
+                                ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/25 border border-emerald-500/30 text-emerald-300 shadow-sm font-bold scale-[1.01]"
+                                : "bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 text-emerald-800 shadow-sm font-bold scale-[1.01]" 
+                              : theme === 'dark'
+                                ? "text-emerald-100/75 hover:text-white hover:bg-emerald-950/40 border border-transparent cursor-pointer"
+                                : "text-emerald-850 hover:text-emerald-955 hover:bg-emerald-100/60 border border-transparent cursor-pointer"
+                          }`}
+                        >
+                          <TabIcon className={`w-4 h-4 ${
+                            isSelected 
+                              ? "text-emerald-500" 
+                              : theme === 'dark' ? "text-emerald-400/80" : "text-emerald-500/60 font-medium"
+                          }`} />
+                          <span className="truncate">{tabItem.label}</span>
+                        </button>
+                        
+                        <button
+                          type="button"
+                          disabled={!isSuperAdmin}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isSuperAdmin) return;
+                            const nextVal = !menuStatus[tabItem.key];
+                            setMenuStatus({ ...menuStatus, [tabItem.key]: nextVal });
+                            triggerToast(`Menu ${tabItem.label} berhasil ${nextVal ? 'diaktifkan' : 'dinonaktifkan'}!`);
+                          }}
+                          className={`absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg flex items-center justify-center transition-all border shrink-0 ${
+                            !isSuperAdmin
+                              ? "bg-emerald-50 text-emerald-300 border-emerald-200/50 cursor-not-allowed"
+                              : isEnabled 
+                                ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200 cursor-pointer" 
+                                : "bg-red-50 hover:bg-red-100 text-red-600 border-red-200 cursor-pointer"
+                          }`}
+                          title={!isSuperAdmin ? "Hanya Super Admin yang dapat mengubah status aktifasi seksi" : `${tabItem.label}: ${isEnabled ? 'Aktif di Publik (Klik untuk Matikan)' : 'Nonaktif di Publik (Klik untuk Aktifkan)'}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${!isSuperAdmin ? "bg-emerald-200" : isEnabled ? "bg-emerald-500" : "bg-red-500"}`} />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
           </div>
 
-          <div className="pt-4 border-t border-emerald-200/80 mt-6 hidden md:block">
-            <div className="p-3 bg-emerald-50/60 border border-emerald-200/80 rounded-xl shadow-xs">
-              <h5 className="text-[10px] uppercase font-bold tracking-wider text-[#0f766e]">Status Database</h5>
-              <div className="flex items-center gap-1.5 mt-1.5">
+          <div className="pt-4 border-t border-emerald-200/80 mt-6">
+            <div className={`p-3 border rounded-xl shadow-xs text-left ${
+              theme === 'dark'
+                ? 'bg-emerald-950/20 border-emerald-905/30 text-emerald-300'
+                : 'bg-emerald-50/60 border-emerald-200/80 text-emerald-800'
+            }`}>
+              <h5 className={`text-[10px] uppercase font-bold tracking-wider ${theme === 'dark' ? 'text-emerald-400' : 'text-[#0f766e]'}`}>Status Database</h5>
+              <div className="flex items-center gap-1.5 mt-1.5 font-sans">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] text-emerald-800 font-mono font-bold">LOKAL ENGINE : AKTIF</span>
+                <span className={`text-[10px] font-mono font-bold ${theme === 'dark' ? 'text-emerald-300' : 'text-emerald-800'}`}>LOKAL ENGINE : AKTIF</span>
               </div>
-              <p className="text-[9px] text-[#0f766e]/70 mt-1 leading-relaxed">Semua konten disimpan dalam penyimpanan lokal browser ini secara aman.</p>
+              <p className={`text-[9px] mt-1 leading-relaxed ${theme === 'dark' ? 'text-emerald-400/70' : 'text-[#0f766e]/70'}`}>Semua konten disimpan dalam penyimpanan lokal browser ini secara aman.</p>
             </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                sessionStorage.removeItem("ansor_cms_user");
+                setCurrentUser(null);
+                triggerToast("Keluar dari sesi admin berhasil.");
+              }}
+              className={`mt-3 w-full py-2.5 px-4 rounded-xl text-xs font-bold font-sans flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-sm border ${
+                theme === 'dark'
+                  ? 'border-red-900/50 bg-red-950/20 text-red-400 hover:bg-red-950 hover:text-white hover:border-red-600'
+                  : 'border-red-200 bg-red-50 text-red-650 hover:bg-red-600 hover:text-white hover:border-red-650'
+              }`}
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              <span>KONTROL LOGOUT SESI</span>
+            </button>
           </div>
         </aside>
 
         {/* WORKSPACE AREA */}
-        <main className={`${theme === 'light' ? 'cms-main-workspace' : ''} flex-grow p-6 md:p-8 overflow-y-auto max-h-[calc(100vh-73px)] relative z-10`}>
+        <main className={`${theme === 'light' ? 'cms-main-workspace' : ''} flex-grow p-6 md:p-8 overflow-y-auto md:h-full max-h-full relative z-10`}>
           
           {/* BANNER NOTIFIKASI SINKRONISASI & ASISTEN SUPABASE */}
-          <div className="mb-6 space-y-4">
+          {isSuperAdmin && (
+            <div className="mb-6 space-y-4">
             {lastSyncError && (
               <div className="bg-red-50 border border-red-200 text-red-900 text-xs p-4 rounded-2xl font-medium leading-relaxed text-left flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm">
                 <div className="flex items-start gap-2.5">
@@ -1806,6 +1858,7 @@ ON CONFLICT (username) DO NOTHING;`}
               )}
             </div>
           </div>
+          )}
 
           {/* TAB 1: HERO CONFIG & IMPACT STATS */}
           {activeTab === "general" && (
