@@ -1857,7 +1857,7 @@ ON CONFLICT (username) DO NOTHING;`}
 
           {/* TAB 1: HERO CONFIG & IMPACT STATS */}
           {activeTab === "general" && (
-            <div className="max-w-4xl space-y-8 text-left">
+            <div className="w-full max-w-7xl xl:max-w-full space-y-8 text-left">
               <div>
                 <h2 className="text-xl font-bold font-display text-white">Kelola Hero Banner & Branding Utama</h2>
                 <p className="text-neutral-400 text-xs mt-1">Ubah judul utama, latar belakang, serta integrasi pemutar video dan sosial media Pimpinan Cabang Bogor.</p>
@@ -2309,7 +2309,7 @@ ON CONFLICT (username) DO NOTHING;`}
 
           {/* TAB 2: ABOUT / PROFIL & 4 PILAR GERAKAN */}
           {activeTab === "about" && (
-            <div className="max-w-4xl space-y-8 text-left">
+            <div className="w-full max-w-7xl xl:max-w-full space-y-8 text-left">
               {renderDisabledSeksiWarning("about", "Tentang & Pilar Gerakan")}
               
               <div>
@@ -2481,7 +2481,7 @@ ON CONFLICT (username) DO NOTHING;`}
 
           {/* TAB 3: PROGRAM KERJA UTAMA */}
           {activeTab === "programs" && (
-            <div className="max-w-4xl space-y-6 text-left">
+            <div className="w-full max-w-7xl xl:max-w-full space-y-6 text-left">
               {renderDisabledSeksiWarning("programs", "Program Kerja")}
               <div>
                 <h2 className="text-xl font-bold font-display text-white">Kelola Program Perjuangan Unggulan</h2>
@@ -2644,7 +2644,7 @@ ON CONFLICT (username) DO NOTHING;`}
 
           {/* TAB 4: BERITA & KEGIATAN */}
           {activeTab === "news" && (
-            <div className="max-w-5xl space-y-6 text-left">
+            <div className="w-full max-w-7xl xl:max-w-full space-y-6 text-left">
               {renderDisabledSeksiWarning("news", "Berita (News)")}
               <div className="flex items-center justify-between">
                 <div>
@@ -2936,7 +2936,7 @@ ON CONFLICT (username) DO NOTHING;`}
 
           {/* TAB 5: GALLERY DOKUMENTASI */}
           {activeTab === "gallery" && (
-            <div className="max-w-4xl space-y-6 text-left">
+            <div className="w-full max-w-7xl xl:max-w-full space-y-6 text-left">
               {renderDisabledSeksiWarning("gallery", "Galeri Kegiatan")}
               <div className="flex items-center justify-between">
                 <div>
@@ -3090,7 +3090,7 @@ ON CONFLICT (username) DO NOTHING;`}
 
           {/* TAB 6: DEWAN PIMPINAN */}
           {activeTab === "leaders" && (
-            <div className="max-w-4xl space-y-6 text-left">
+            <div className="w-full max-w-7xl xl:max-w-full space-y-6 text-left">
               {renderDisabledSeksiWarning("leaders", "Dewan Pimpinan")}
               <div className="flex items-center justify-between">
                 <div>
@@ -3230,7 +3230,7 @@ ON CONFLICT (username) DO NOTHING;`}
 
           {/* TAB 7: OUTBOUND CONTACTS */}
           {activeTab === "contact" && (
-            <div className="max-w-4xl space-y-6 text-left">
+            <div className="w-full max-w-7xl xl:max-w-full space-y-6 text-left">
               {renderDisabledSeksiWarning("contact", "Informasi Kontak Footer")}
               
               <div>
@@ -3451,7 +3451,7 @@ ON CONFLICT (username) DO NOTHING;`}
 
           {/* TAB 8: MONITORING PEMBACA (READER ANALYTICS) */}
           {activeTab === "analytics" && (
-            <div className="max-w-5xl space-y-6 text-left">
+            <div className="w-full max-w-7xl xl:max-w-full space-y-6 text-left">
               {renderDisabledSeksiWarning("analytics", "Monitoring Pembaca")}
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -3840,7 +3840,7 @@ ON CONFLICT (username) DO NOTHING;`}
 
           {/* TAB 9: LAYANAN DIGITAL (KADERISASI & E-PERSURATAN) */}
           {activeTab === "services" && (
-            <div className="max-w-4xl space-y-6 text-left">
+            <div className="w-full max-w-7xl xl:max-w-full space-y-6 text-left">
               <div>
                 <h2 className="text-xl font-bold font-display text-white">Sistem Kelola Portal & Layanan Digital</h2>
                 <p className="text-neutral-400 text-xs mt-1">
@@ -4747,7 +4747,7 @@ ON CONFLICT (username) DO NOTHING;`}
 
           {/* TAB 10: USER MANAGEMENT & CUSTOM MENU LABELS (EXCLUSIVE SUPER ADMIN) */}
           {activeTab === "users" && isSuperAdmin && (
-            <div className="max-w-5xl space-y-8 text-left">
+            <div className="w-full max-w-7xl xl:max-w-full space-y-8 text-left">
               <div>
                 <h2 className="text-xl font-bold font-display text-white">Sistem Pengguna & Label Navigasi</h2>
                 <p className="text-neutral-400 text-xs mt-1">
