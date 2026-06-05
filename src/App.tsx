@@ -34,7 +34,21 @@ function MainAppContent() {
   // Back to Top button visibility
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const { isCmsOpen, menuStatus, theme, officialPamphlet } = useCMS();
+  const { isCmsOpen, menuStatus, theme, officialPamphlet, news } = useCMS();
+
+  // Deep linking and URL handler for dedicated news articles on direct load
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.startsWith("/news/")) {
+      const newsId = path.split("/").pop();
+      if (newsId && news && news.length > 0) {
+        const found = news.find((item) => item.id === newsId);
+        if (found) {
+          setSelectedNews(found);
+        }
+      }
+    }
+  }, [news]);
 
   useEffect(() => {
     // Listen to custom cross-modal redirection events
@@ -73,11 +87,16 @@ function MainAppContent() {
 
   useEffect(() => {
     if (selectedNews) {
+      const newsPath = `/news/${selectedNews.id}`;
+      if (window.location.pathname !== newsPath) {
+        window.history.pushState(null, "", newsPath);
+      }
+
       fetch("/api/analytics/hit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          page: `/news/${selectedNews.id}`,
+          page: newsPath,
           title: selectedNews.title,
           referrer: document.referrer
         })
@@ -228,7 +247,12 @@ function MainAppContent() {
         isVideoOpen={isVideoOpen}
         onVideoClose={() => setIsVideoOpen(false)}
         selectedNews={selectedNews}
-        onNewsClose={() => setSelectedNews(null)}
+        onNewsClose={() => {
+          setSelectedNews(null);
+          if (window.location.pathname.startsWith("/news/")) {
+            window.history.pushState(null, "", "/");
+          }
+        }}
       />
 
       {/* PAMPHLET ACTIVITY FLOATING BANNER */}

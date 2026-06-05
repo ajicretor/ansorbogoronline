@@ -3,6 +3,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import dns from "dns";
 import { GoogleGenAI } from "@google/genai";
+import fs from "fs";
 
 // Set default DNS resolution to ipv4first to avoid dual-stack host resolution issues
 if (dns.setDefaultResultOrder) {
@@ -446,6 +447,112 @@ Gunakan salam hangat sahabat pemuda Ansor ("Halo Sahabat!", "Assalamu'alaikum wr
     } catch (err: any) {
       console.error("Analytics fetch error:", err);
       return res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // Dynamic news page rendering wrapper to serve Open Graph preview tags to crawlers & bots
+  app.get('/news/:newsId', async (req, res) => {
+    try {
+      const { newsId } = req.params;
+      let newsList: any[] = [];
+      
+      const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "https://ccalbsgweohipcvxauli.supabase.co";
+      const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjYWxic2d3ZW9oaXBjdnhhdWxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDc5MjQsImV4cCI6MjA5NTYyMzkyNH0.olxAt361Hyb0cLSM_B5V2ZOMibWVgawYgFSmnPK0nuc";
+      
+      const cleanUrl = supabaseUrl.replace(/['"]/g, "").trim().replace(/\/+$/, "");
+      const cleanKey = supabaseKey.replace(/['"]/g, "").trim();
+      
+      if (cleanUrl && cleanKey) {
+        try {
+          const fetchRes = await fetch(`${cleanUrl}/rest/v1/ansor_bogor_cms?key=eq.ansor_bogor_news&select=value`, {
+            headers: {
+              "apikey": cleanKey,
+              "Authorization": `Bearer ${cleanKey}`
+            }
+          });
+          if (fetchRes.ok) {
+            const dbData = await fetchRes.json();
+            if (Array.isArray(dbData) && dbData.length > 0 && dbData[0].value) {
+              newsList = dbData[0].value;
+            }
+          }
+        } catch (dbErr) {
+          console.error("Failed to query live news from Supabase for preview generation:", dbErr);
+        }
+      }
+      
+      // Fallback local NEWS assets if DB fetch was empty or failed
+      if (!newsList || newsList.length === 0) {
+        newsList = [
+          {
+            id: "news-diklatsar-parung",
+            title: "Cetak Kader Unggul, GP Ansor Kabupaten Bogor Sukses Gelar Diklatsar Banser di Parung",
+            excerpt: "Sebanyak 150 peserta resmi dibaiat menjadi anggota Barisan Ansor Serbaguna (Banser) setelah melalui penggemblengan fisik dan mental selama 3 hari.",
+            imageUrl: "https://img.youtube.com/vi/F01FmR6k3_A/0.jpg",
+          },
+          {
+            id: "news-sosial-sukajaya",
+            title: "Tanggap Bencana, BAGANA Ansor Bogor Salurkan Logistik Korban Longsor di Sukajaya",
+            excerpt: "Merespon bencana longsor akibat curah hujan tinggi, tim Banser Tanggap Bencana langsung mendirikan posko darurat and membagikan bahan makanan.",
+            imageUrl: "https://img.youtube.com/vi/dsNIOwcqaM8/0.jpg",
+          },
+          {
+            id: "news-ekraf-workshop",
+            title: "Geliat Wirausaha Pemuda Desa: GP Ansor Bogor Luncurkan Inkubator Bisnis Digital",
+            excerpt: "Guna menekan angka pengangguran pemuda pasca-pandemi, bidang perekonomian menyelenggarakan sertifikasi UMKM and mentoring digital gratis.",
+            imageUrl: "https://img.youtube.com/vi/UoxeAox0p3s/0.jpg",
+          }
+        ];
+      }
+      
+      const foundArticle = newsList.find((item: any) => item.id === newsId);
+      
+      let htmlPath = "";
+      if (process.env.NODE_ENV !== "production") {
+        htmlPath = path.join(process.cwd(), 'index.html');
+      } else {
+        htmlPath = path.join(process.cwd(), 'dist', 'index.html');
+      }
+      
+      if (!fs.existsSync(htmlPath)) {
+        // Safe check for production fallback to root level if build not fully done
+        htmlPath = path.join(process.cwd(), 'index.html');
+      }
+      
+      let htmlContent = fs.readFileSync(htmlPath, 'utf-8');
+      
+      if (foundArticle) {
+        const title = foundArticle.title;
+        const description = foundArticle.excerpt || foundArticle.description || foundArticle.content || "Media syi'ar dakwah virtual PC GP Ansor Kabupaten Bogor.";
+        let imageUrl = foundArticle.imageUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1080&auto=format&fit=crop";
+        if (imageUrl.startsWith("/")) {
+          imageUrl = `https://${req.get('host')}${imageUrl}`;
+        }
+        const pageUrl = `https://${req.get('host')}/news/${newsId}`;
+        
+        htmlContent = htmlContent
+          .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+          .replace(/<meta property="og:title" content="[^"]*"\s*\/?>/g, `<meta property="og:title" content="${title.replace(/"/g, '&quot;')}" />`)
+          .replace(/<meta property="og:description" content="[^"]*"\s*\/?>/g, `<meta property="og:description" content="${description.replace(/"/g, '&quot;')}" />`)
+          .replace(/<meta property="og:image" content="[^"]*"\s*\/?>/g, `<meta property="og:image" content="${imageUrl}" />`)
+          .replace(/<meta property="og:url" content="[^"]*"\s*\/?>/g, `<meta property="og:url" content="${pageUrl}" />`)
+          .replace(/<meta property="twitter:title" content="[^"]*"\s*\/?>/g, `<meta property="twitter:title" content="${title.replace(/"/g, '&quot;')}" />`)
+          .replace(/<meta property="twitter:description" content="[^"]*"\s*\/?>/g, `<meta property="twitter:description" content="${description.replace(/"/g, '&quot;')}" />`)
+          .replace(/<meta property="twitter:image" content="[^"]*"\s*\/?>/g, `<meta property="twitter:image" content="${imageUrl}" />`)
+          .replace(/<meta property="twitter:url" content="[^"]*"\s*\/?>/g, `<meta property="twitter:url" content="${pageUrl}" />`);
+      }
+      
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(htmlContent);
+    } catch (e) {
+      console.error("Router error inside dynamic /news/:newsId handler:", e);
+      // Absolute fallback to direct index.html
+      const fallbackPath = process.env.NODE_ENV !== "production" 
+        ? path.join(process.cwd(), 'index.html')
+        : (fs.existsSync(path.join(process.cwd(), 'dist', 'index.html')) 
+            ? path.join(process.cwd(), 'dist', 'index.html') 
+            : path.join(process.cwd(), 'index.html'));
+      return res.sendFile(fallbackPath);
     }
   });
 
