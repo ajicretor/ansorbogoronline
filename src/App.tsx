@@ -39,8 +39,9 @@ function MainAppContent() {
   // Deep linking and URL handler for dedicated news articles on direct load
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.startsWith("/news/")) {
-      const newsId = path.split("/").pop();
+    const match = path.match(/\/news\/([^/]+)/);
+    if (match) {
+      const newsId = match[1];
       if (newsId && news && news.length > 0) {
         const found = news.find((item) => item.id === newsId);
         if (found) {
@@ -87,7 +88,17 @@ function MainAppContent() {
 
   useEffect(() => {
     if (selectedNews) {
-      const newsPath = `/news/${selectedNews.id}`;
+      const currentPath = window.location.pathname;
+      let baseDir = "/";
+      if (currentPath.includes("/news/")) {
+        baseDir = currentPath.split("/news/")[0] + "/";
+      } else {
+        baseDir = currentPath.endsWith("/") ? currentPath : currentPath + "/";
+      }
+      baseDir = baseDir.replace(/\/+/g, "/");
+      if (!baseDir.endsWith("/")) baseDir += "/";
+      
+      const newsPath = `${baseDir}news/${selectedNews.id}`;
       if (window.location.pathname !== newsPath) {
         window.history.pushState(null, "", newsPath);
       }
@@ -249,8 +260,10 @@ function MainAppContent() {
         selectedNews={selectedNews}
         onNewsClose={() => {
           setSelectedNews(null);
-          if (window.location.pathname.startsWith("/news/")) {
-            window.history.pushState(null, "", "/");
+          const currentPath = window.location.pathname;
+          if (currentPath.includes("/news/")) {
+            const baseDir = currentPath.split("/news/")[0] || "/";
+            window.history.pushState(null, "", baseDir === "" ? "/" : baseDir);
           }
         }}
       />
