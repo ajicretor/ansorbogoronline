@@ -93,6 +93,17 @@ async function run() {
     .replace(/(href|src)="(\.\/)?favicon\.svg"/g, '$1="../../favicon.svg"')
     .replace(/(href|src)="\/favicon\.svg"/g, '$1="../../favicon.svg"');
 
+  // Helper to extract YouTube thumbnail if a regular watch link is supplied as imageUrl
+  function getYouTubeThumbnail(url) {
+    if (!url) return "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1080&auto=format&fit=crop";
+    const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+    const match = url.match(ytRegex);
+    if (match && match[1]) {
+      return `https://img.youtube.com/vi/${match[1]}/0.jpg`;
+    }
+    return url;
+  }
+
   // Perform dynamic replacement for each article
   for (const article of articles) {
     if (!article.id) continue;
@@ -101,7 +112,10 @@ async function run() {
 
     const articleTitle = article.title;
     const articleExcerpt = article.excerpt || article.description || article.content || "Media syi'ar dakwah virtual PC PC GP Ansor Kabupaten Bogor.";
-    let imageUrl = article.imageUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1080&auto=format&fit=crop";
+    let rawImageUrl = article.imageUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1080&auto=format&fit=crop";
+
+    // Convert Youtube links if necessary
+    let imageUrl = getYouTubeThumbnail(rawImageUrl);
 
     // Handle relative images (ensure absolute for bots)
     if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
@@ -113,12 +127,15 @@ async function run() {
 
     // Custom tags replacement
     let newsHtml = basePageHtml
+      // Replace Canonical tag
+      .replace(/<link rel="canonical" href="[^"]*"\s*\/?>/g, `<link rel="canonical" href="${hostUrl}" />`)
       // Replace Title Tag
       .replace(/<title>[^<]*<\/title>/, `<title>${articleTitle}</title>`)
       // Open Graph Tags
       .replace(/<meta property="og:title" content="[^"]*"\s*\/?>/g, `<meta property="og:title" content="${articleTitle.replace(/"/g, '&quot;')}" />`)
       .replace(/<meta property="og:description" content="[^"]*"\s*\/?>/g, `<meta property="og:description" content="${articleExcerpt.replace(/"/g, '&quot;')}" />`)
       .replace(/<meta property="og:image" content="[^"]*"\s*\/?>/g, `<meta property="og:image" content="${imageUrl}" />`)
+      .replace(/<meta property="og:image:secure_url" content="[^"]*"\s*\/?>/g, `<meta property="og:image:secure_url" content="${imageUrl}" />`)
       .replace(/<meta property="og:url" content="[^"]*"\s*\/?>/g, `<meta property="og:url" content="${hostUrl}" />`)
       // Twitter Tags
       .replace(/<meta property="twitter:title" content="[^"]*"\s*\/?>/g, `<meta property="twitter:title" content="${articleTitle.replace(/"/g, '&quot;')}" />`)

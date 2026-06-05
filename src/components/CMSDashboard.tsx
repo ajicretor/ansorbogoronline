@@ -8,6 +8,7 @@ import {
   Sun, Moon, Download
 } from "lucide-react";
 import AnsorLogo from "./AnsorLogo";
+import Modals from "./Modals";
 import { supabase } from "../lib/supabase";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -5989,6 +5990,16 @@ ON CONFLICT (username) DO NOTHING;`}
         </main>
       </div>
 
+      <Modals
+        isJoinOpen={false}
+        onJoinClose={() => {}}
+        selectedProgram={null}
+        onProgramClose={() => {}}
+        isVideoOpen={false}
+        onVideoClose={() => {}}
+        selectedNews={previewNewsItem}
+        onNewsClose={() => setPreviewNewsItem(null)}
+      />
     </div>
   );
 }

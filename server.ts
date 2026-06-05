@@ -524,7 +524,16 @@ Gunakan salam hangat sahabat pemuda Ansor ("Halo Sahabat!", "Assalamu'alaikum wr
       if (foundArticle) {
         const title = foundArticle.title;
         const description = foundArticle.excerpt || foundArticle.description || foundArticle.content || "Media syi'ar dakwah virtual PC GP Ansor Kabupaten Bogor.";
-        let imageUrl = foundArticle.imageUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1080&auto=format&fit=crop";
+        let rawImageUrl = foundArticle.imageUrl || "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1080&auto=format&fit=crop";
+        
+        // Helper to convert YouTube link to JPEG direct URL if needed
+        let imageUrl = rawImageUrl;
+        const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+        const match = rawImageUrl.match(ytRegex);
+        if (match && match[1]) {
+          imageUrl = `https://img.youtube.com/vi/${match[1]}/0.jpg`;
+        }
+
         if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
           const cleanImgPath = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
           imageUrl = `https://${req.get('host')}${cleanImgPath}`;
@@ -532,10 +541,12 @@ Gunakan salam hangat sahabat pemuda Ansor ("Halo Sahabat!", "Assalamu'alaikum wr
         const pageUrl = `https://${req.get('host')}/news/${newsId}`;
         
         htmlContent = htmlContent
+          .replace(/<link rel="canonical" href="[^"]*"\s*\/?>/g, `<link rel="canonical" href="${pageUrl}" />`)
           .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
           .replace(/<meta property="og:title" content="[^"]*"\s*\/?>/g, `<meta property="og:title" content="${title.replace(/"/g, '&quot;')}" />`)
           .replace(/<meta property="og:description" content="[^"]*"\s*\/?>/g, `<meta property="og:description" content="${description.replace(/"/g, '&quot;')}" />`)
           .replace(/<meta property="og:image" content="[^"]*"\s*\/?>/g, `<meta property="og:image" content="${imageUrl}" />`)
+          .replace(/<meta property="og:image:secure_url" content="[^"]*"\s*\/?>/g, `<meta property="og:image:secure_url" content="${imageUrl}" />`)
           .replace(/<meta property="og:url" content="[^"]*"\s*\/?>/g, `<meta property="og:url" content="${pageUrl}" />`)
           .replace(/<meta property="twitter:title" content="[^"]*"\s*\/?>/g, `<meta property="twitter:title" content="${title.replace(/"/g, '&quot;')}" />`)
           .replace(/<meta property="twitter:description" content="[^"]*"\s*\/?>/g, `<meta property="twitter:description" content="${description.replace(/"/g, '&quot;')}" />`)

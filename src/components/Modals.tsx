@@ -23,6 +23,48 @@ interface ModalsProps {
   onNewsClose: () => void;
 }
 
+const parseInlineMarkdown = (txt: string): React.ReactNode[] => {
+  if (!txt) return [];
+  const regex = /(\*\*.*?\*\*|\[.*?\]\(.*?\)|_.*?_|\*.*?\*)/g;
+  const parts = txt.split(regex);
+
+  return parts.map((part, i) => {
+    if (!part) return null;
+    
+    // Bold check
+    if (part.startsWith('**') && part.endsWith('**')) {
+      const innerText = part.slice(2, -2);
+      return <strong key={i} className="font-bold text-emerald-600 dark:text-emerald-400 font-sans">{innerText}</strong>;
+    }
+    
+    // Link check: [label](url)
+    if (part.startsWith('[') && part.includes('](') && part.endsWith(')')) {
+      const closeBracket = part.indexOf('](');
+      const label = part.slice(1, closeBracket);
+      const url = part.slice(closeBracket + 2, -1);
+      return (
+        <a 
+          key={i} 
+          href={url} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-emerald-600 dark:text-emerald-400 underline font-semibold hover:text-emerald-500 transition-colors"
+        >
+          {label}
+        </a>
+      );
+    }
+
+    // Italic check
+    if ((part.startsWith('*') && part.endsWith('*')) || (part.startsWith('_') && part.endsWith('_'))) {
+      const innerText = part.slice(1, -1);
+      return <em key={i} className="italic">{innerText}</em>;
+    }
+
+    return part;
+  });
+};
+
 const BOGOR_DISTRICTS = [
   "Babakan Madang", "Bo Jong Gede", "Caringin", "Cariu", "Ciampea", "Ciawi", "Cibinong", "Cibungbulang", "Cigombong", "Cigudeg", "Cijeruk", "Cileungsi", "Ciomas", "Cisarua", "Ciseeng", "Citeureup", "Dramaga", "Gunung Putri", "Gunung Sindur", "Jasinga", "Jonggol", "Kemang", "Klapanunggal", "Leuwiliang", "Leuwisadeng", "Megamendung", "Nanggung", "Pamijahan", "Parung Panjang", "Parung", "Ranca Bungur", "Rumpin", "Sukajaya", "Sukamakmur", "Sukaraja", "Tajur Halang", "Tamansari", "Tenjo", "Tenjolaya"
 ];
@@ -1512,9 +1554,10 @@ export default function Modals({
 
                       // Blockquote render check
                       if (text.startsWith(">")) {
+                        const quoteText = text.replace(/^>\s*/gm, "");
                         return (
                           <blockquote key={idx} className={`p-4 my-2 rounded-xl border-l-[4px] leading-relaxed select-text italic ${quoteClass}`}>
-                            {text.replace(/^>\s*/, "")}
+                            {parseInlineMarkdown(quoteText)}
                           </blockquote>
                         );
                       }
@@ -1523,7 +1566,7 @@ export default function Modals({
                       if (text.startsWith("###")) {
                         return (
                           <h3 key={idx} className={`text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-2 font-sans ${titleClass}`}>
-                            {text.replace(/^###\s*/, "")}
+                            {parseInlineMarkdown(text.replace(/^###\s*/, ""))}
                           </h3>
                         );
                       }
@@ -1532,15 +1575,43 @@ export default function Modals({
                       if (text.startsWith("##")) {
                         return (
                           <h2 key={idx} className={`text-2xl sm:text-3xl font-extrabold tracking-tight mt-9 mb-3 border-b pb-2 ${titleClass} border-current/10`}>
-                            {text.replace(/^##\s*/, "")}
+                            {parseInlineMarkdown(text.replace(/^##\s*/, ""))}
                           </h2>
                         );
+                      }
+
+                      // List render check
+                      if (text.startsWith("- ") || text.startsWith("* ") || /^\d+\.\s/.test(text)) {
+                        const lines = text.split("\n");
+                        const isOrdered = /^\d+\.\s/.test(text);
+                        const listItems = lines.map((line, lIdx) => {
+                          const cleanLine = line.replace(/^[-*]\s+/, "").replace(/^\d+\.\s+/, "");
+                          return (
+                            <li key={lIdx} className="leading-relaxed">
+                              {parseInlineMarkdown(cleanLine)}
+                            </li>
+                          );
+                        });
+                        
+                        if (isOrdered) {
+                          return (
+                            <ol key={idx} className={`list-decimal pl-6 space-y-2 my-2 font-sans opacity-95 ${textMutedClass}`}>
+                              {listItems}
+                            </ol>
+                          );
+                        } else {
+                          return (
+                            <ul key={idx} className={`list-disc pl-6 space-y-2 my-2 font-sans opacity-95 ${textMutedClass}`}>
+                              {listItems}
+                            </ul>
+                          );
+                        }
                       }
 
                       // Standard paragraph custom spacing
                       return (
                         <p key={idx} className="opacity-95 leading-relaxed text-justify select-text">
-                          {text}
+                          {parseInlineMarkdown(text)}
                         </p>
                       );
                     })}
@@ -1571,7 +1642,7 @@ export default function Modals({
                       <span className={`text-[10px] font-bold tracking-wider mr-2 uppercase ${textMutedClass}`}>Bagikan Redaksi</span>
                       {/* WA */}
                       <a
-                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`[KABAR NU] PC GP Ansor Kabupaten Bogor:\n"${selectedNews.title}"\n\nBaca laporan selengkapnya di portal resmi:\n${window.location.origin}/news/${selectedNews.id}`)}`}
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`[Ansor Bogor Online News]:\n"${selectedNews.title}"\n\nBaca laporan selengkapnya di portal resmi:\n${window.location.origin}/news/${selectedNews.id}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-8 h-8 rounded-full bg-[#25D366] hover:bg-[#1ebd5d] text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm font-sans"
