@@ -39,14 +39,25 @@ function MainAppContent() {
   // Deep linking and URL handler for dedicated news articles on direct load
   useEffect(() => {
     const path = window.location.pathname;
-    const match = path.match(/\/news\/([^/]+)/);
-    if (match) {
-      const newsId = match[1];
-      if (newsId && news && news.length > 0) {
-        const found = news.find((item) => item.id === newsId);
-        if (found) {
-          setSelectedNews(found);
-        }
+    const searchParams = new URLSearchParams(window.location.search);
+    const searchNewsId = searchParams.get("news");
+    const hash = window.location.hash;
+    const hashMatch = hash.match(/#\/news\/([^/]+)/);
+    
+    let newsId = "";
+    const pathMatch = path.match(/\/news\/([^/]+)/);
+    if (pathMatch) {
+      newsId = pathMatch[1];
+    } else if (searchNewsId) {
+      newsId = searchNewsId;
+    } else if (hashMatch) {
+      newsId = hashMatch[1];
+    }
+
+    if (newsId && news && news.length > 0) {
+      const found = news.find((item) => item.id === newsId);
+      if (found) {
+        setSelectedNews(found);
       }
     }
   }, [news]);
@@ -88,21 +99,12 @@ function MainAppContent() {
 
   useEffect(() => {
     if (selectedNews) {
-      const currentPath = window.location.pathname;
-      let baseDir = "/";
-      if (currentPath.includes("/news/")) {
-        baseDir = currentPath.split("/news/")[0] + "/";
-      } else {
-        baseDir = currentPath.endsWith("/") ? currentPath : currentPath + "/";
-      }
-      baseDir = baseDir.replace(/\/+/g, "/");
-      if (!baseDir.endsWith("/")) baseDir += "/";
-      
-      const newsPath = `${baseDir}news/${selectedNews.id}`;
-      if (window.location.pathname !== newsPath) {
-        window.history.pushState(null, "", newsPath);
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get("news") !== selectedNews.id) {
+        window.history.pushState(null, "", `?news=${selectedNews.id}`);
       }
 
+      const newsPath = `${window.location.pathname}?news=${selectedNews.id}`;
       fetch("/api/analytics/hit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -260,6 +262,13 @@ function MainAppContent() {
         selectedNews={selectedNews}
         onNewsClose={() => {
           setSelectedNews(null);
+          const searchParams = new URLSearchParams(window.location.search);
+          if (searchParams.has("news")) {
+            searchParams.delete("news");
+            const newQuery = searchParams.toString();
+            const newUrl = window.location.pathname + (newQuery ? "?" + newQuery : "");
+            window.history.pushState(null, "", newUrl);
+          }
           const currentPath = window.location.pathname;
           if (currentPath.includes("/news/")) {
             const baseDir = currentPath.split("/news/")[0] || "/";

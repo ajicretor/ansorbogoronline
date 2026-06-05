@@ -1636,13 +1636,12 @@ export default function Modals({
                         <p className={`text-[10px] mt-1 ${textMutedClass}`}>Apresiasi tulisan khidmat kontributor</p>
                       </div>
                     </div>
-
-                    {/* Social Shares */}
+                                       {/* Social Shares */}
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`text-[10px] font-bold tracking-wider mr-2 uppercase ${textMutedClass}`}>Bagikan Redaksi</span>
                       {/* WA */}
                       <a
-                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`[Ansor Bogor Online News]:\n"${selectedNews.title}"\n\nBaca laporan selengkapnya di portal resmi:\n${window.location.origin}/news/${selectedNews.id}`)}`}
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`[Ansor Bogor Online News]:\n"${selectedNews.title}"\n\nBaca laporan selengkapnya di portal resmi:\n${window.location.origin}/?news=${selectedNews.id}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-8 h-8 rounded-full bg-[#25D366] hover:bg-[#1ebd5d] text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm font-sans"
@@ -1654,7 +1653,7 @@ export default function Modals({
                       </a>
                       {/* FB */}
                       <a
-                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + "/news/" + selectedNews.id)}`}
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + "/?news=" + selectedNews.id)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-8 h-8 rounded-full bg-[#3B5998] hover:bg-[#2d4373] text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm font-sans"
@@ -1666,7 +1665,7 @@ export default function Modals({
                       </a>
                       {/* Telegram */}
                       <a
-                        href={`https://t.me/share/url?url=${encodeURIComponent(window.location.origin + "/news/" + selectedNews.id)}&text=${encodeURIComponent(selectedNews.title)}`}
+                        href={`https://t.me/share/url?url=${encodeURIComponent(window.location.origin + "/?news=" + selectedNews.id)}&text=${encodeURIComponent(selectedNews.title)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-8 h-8 rounded-full bg-[#0088cc] hover:bg-[#0077b3] text-white flex items-center justify-center transition-all hover:scale-110 shadow-sm font-sans"
@@ -1680,7 +1679,7 @@ export default function Modals({
                       <button
                         type="button"
                         onClick={() => {
-                          const directUrl = `${window.location.origin}/news/${selectedNews.id}`;
+                          const directUrl = `${window.location.origin}/?news=${selectedNews.id}`;
                           navigator.clipboard.writeText(directUrl);
                           setCopiedMessage("Tersalin!");
                           setJustCopied(true);
