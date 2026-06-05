@@ -1382,7 +1382,7 @@ export default function CMSDashboard() {
   const isSuperAdmin = currentUser?.role === "superadmin";
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans relative overflow-hidden transition-all duration-300 ${
+    <div className={`min-h-screen w-full max-w-full overflow-x-hidden flex flex-col font-sans relative transition-all duration-300 ${
       theme === 'dark'
         ? 'bg-[#010a04] text-[#ecfdf5] dark'
         : 'bg-[#f0fdf4] text-slate-800'
@@ -1408,104 +1408,99 @@ export default function CMSDashboard() {
         </div>
       )}
 
-      {/* DASHBOARD NAVBAR HEADER */}
-      <header className={`border-b px-6 py-4 sticky top-0 z-40 flex items-center justify-between shadow-xs relative transition-all duration-300 ${
+      {/* DASHBOARD NAVBAR HEADER WITH RESPONSIVE LAYOUT CARING */}
+      <header className={`border-b px-4 md:px-6 py-3 md:py-4 sticky top-0 z-40 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-xs relative transition-all duration-300 w-full max-w-full overflow-hidden ${
         theme === 'dark'
-          ? 'border-emerald-950/60 bg-[#011406]/90'
-          : 'border-emerald-200/70 bg-white/80 backdrop-blur-md'
+          ? 'border-emerald-950/60 bg-[#011406]/94'
+          : 'border-emerald-200/70 bg-white/90 backdrop-blur-md'
       }`}>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 md:w-9 md:h-9 flex-shrink-0">
             <AnsorLogo className="w-full h-full filter drop-shadow-[0_2px_6px_rgba(16,185,129,0.15)]" />
           </div>
           <div>
-            <h1 className={`text-base font-bold flex items-center gap-2 tracking-wide font-display transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-              CMS KONTEN <span className={`text-[10px] px-2.2 py-0.5 rounded-full border font-bold uppercase transition-all ${theme === 'dark' ? 'bg-emerald-950/50 text-emerald-300 border-emerald-800/40' : 'bg-emerald-100/70 text-emerald-800 border-emerald-200'}`}>ADMIN PANEL</span>
+            <h1 className={`text-sm md:text-base font-bold flex items-center gap-1.5 md:gap-2 tracking-wide font-display transition-colors ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              CMS KONTEN <span className={`text-[9px] md:text-[10px] px-1.5 md:px-2.2 py-0.5 rounded-full border font-bold uppercase transition-all ${theme === 'dark' ? 'bg-emerald-950/50 text-emerald-300 border-emerald-800/40' : 'bg-emerald-100/70 text-emerald-800 border-emerald-200'}`}>ADMIN PANEL</span>
             </h1>
-            <p className={`text-[10px] font-mono transition-colors ${theme === 'dark' ? 'text-emerald-500/80' : 'text-slate-500'}`}>GP Ansor PC Kabupaten Bogor Digital Suite</p>
+            <p className={`text-[9px] md:text-[10px] font-mono hidden md:block transition-colors ${theme === 'dark' ? 'text-emerald-500/80' : 'text-slate-500'}`}>GP Ansor PC Kabupaten Bogor Digital Suite</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 relative z-10">
-          {/* Supabase Connection Status Pill with Manual Sync Trigger */}
+        <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2.5 relative z-10 overflow-x-auto scrollbar-none py-1 sm:py-0">
+          {/* Supabase Connection Status Pill */}
           <button
             type="button"
             onClick={handleManualDBSync}
             disabled={isSyncingDb}
-            className={`px-3 py-1.5 rounded-lg border text-xs flex items-center gap-1.5 transition-all font-semibold ${
+            className={`px-2 md:px-3 py-1.5 rounded-lg border text-[10px] md:text-xs flex items-center gap-1.5 transition-all font-semibold shrink-0 cursor-pointer ${
               dbConnected === null
                 ? "bg-amber-50/50 border-amber-200 text-amber-600 dark:bg-amber-950/20 dark:border-amber-900/30 dark:text-amber-300"
                 : dbConnected === true
-                ? "bg-emerald-50/70 border-emerald-200/80 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-800/40 dark:text-emerald-300 cursor-pointer hover:bg-emerald-100/60"
-                : "bg-red-50/70 border-red-200/80 text-red-700 dark:bg-red-950/25 dark:border-red-900/30 dark:text-red-300 cursor-pointer hover:bg-red-100/50"
+                ? "bg-emerald-50/70 border-emerald-200/80 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-800/40 dark:text-emerald-300 hover:bg-emerald-100/60"
+                : "bg-red-50/70 border-red-200/80 text-red-700 dark:bg-red-950/25 dark:border-red-900/30 dark:text-red-300 hover:bg-red-100/50"
             }`}
-            title="Klik untuk memicu pemuatan paksa (pull) data ril terupdate langsung dari Server database Supabase"
+            title="Sikronisasi Data Server Supabase"
           >
             <Database className={`w-3.5 h-3.5 ${isSyncingDb ? "animate-spin text-emerald-500" : dbConnected === true ? "text-emerald-500" : "text-amber-500 animate-pulse"}`} />
-            <span className="hidden sm:inline">
+            <span>
               {dbConnected === null ? (
-                "Mengecek Koneksi..."
+                "Cek koneksi..."
               ) : dbConnected === true ? (
-                <span>Database: Terhubung {isSyncingDb && "(Sinkronisasi...)"}</span>
+                <span>Koneksi OK {isSyncingDb && "(Sinkronisasi...)"}</span>
               ) : (
-                "Database: Offline / Lokal"
+                "Offline"
               )}
-            </span>
-            <span className="inline sm:hidden text-[10px]">
-              {dbConnected === null ? "DB..." : dbConnected === true ? "DB: Terhubung" : "DB: Lokal"}
             </span>
           </button>
 
-          {/* Default Restore available exclusively for superadmin */}
+          {/* Default Restore for superadmin */}
           {isSuperAdmin && (
             <button
               type="button"
               onClick={resetToDefault}
-              className="px-3 py-1.5 rounded-lg border border-emerald-200/80 bg-emerald-50/70 text-emerald-800 hover:text-emerald-950 hover:bg-emerald-100 text-xs flex items-center gap-1.5 transition-colors cursor-pointer font-semibold"
-              title="Sapu bersih semua perubahan kustom"
+              className="px-2 md:px-3 py-1.5 rounded-lg border border-emerald-200/80 bg-emerald-50/70 text-emerald-800 hover:text-emerald-955 hover:bg-emerald-100 text-[10px] md:text-xs flex items-center gap-1 md:gap-1.5 transition-all cursor-pointer font-semibold shrink-0"
+              title="Reset ke pengaturan bawaan awal"
             >
               <RotateCcw className="w-3.5 h-3.5 text-emerald-600" />
-              Set Bawaan
+              <span className="hidden md:inline">Reset</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={() => setIsCmsOpen(false)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md hover:shadow-emerald-600/15 cursor-pointer hover:scale-[1.02]"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 md:px-3.5 py-1.5 rounded-lg text-[10px] md:text-xs font-semibold flex items-center gap-1 md:gap-1.5 transition-all shadow-md hover:shadow-emerald-600/15 cursor-pointer shrink-0"
+            title="Ke Beranda Depan"
           >
             <Eye className="w-3.5 h-3.5" />
-            Landing Page
+            <span>Landing Page</span>
           </button>
 
           <button
             type="button"
             onClick={toggleTheme}
-            className="px-3 py-1.5 rounded-lg border border-emerald-200/80 bg-emerald-50/70 dark:border-emerald-800/40 dark:bg-emerald-955/40 text-emerald-850 hover:text-emerald-950 dark:text-emerald-100 hover:bg-emerald-100 text-xs flex items-center gap-1.5 transition-colors cursor-pointer font-semibold"
-            title="Ganti Tema Tampilan (Gelap/Terang)"
+            className="px-2 md:px-3 py-1.5 rounded-lg border border-emerald-200/80 bg-emerald-50/70 dark:border-emerald-800/40 dark:bg-emerald-955/40 text-emerald-850 hover:text-emerald-950 dark:text-emerald-100 hover:bg-emerald-100 text-[10px] md:text-xs flex items-center gap-1 md:gap-1.5 transition-colors cursor-pointer font-semibold shrink-0"
+            title="Ganti Tema (Gelap/Terang)"
           >
             {theme === "dark" ? (
               <>
                 <Sun className="w-3.5 h-3.5 text-amber-500" />
-                <span>Light Mode</span>
+                <span className="hidden sm:inline">Light</span>
               </>
             ) : (
               <>
                 <Moon className="w-3.5 h-3.5 text-slate-500" />
-                <span>Dark Mode</span>
+                <span className="hidden sm:inline">Dark</span>
               </>
             )}
           </button>
 
-          {/* User Status and Logout Section */}
-          <div className="flex items-center gap-2 border-l border-emerald-200 pl-3.5 ml-1">
+          {/* User Status and Logout Section inside Header */}
+          <div className="flex items-center gap-1.5 sm:gap-2 border-l border-emerald-200 pl-2 ml-0.5 shrink-0">
             <div className="hidden sm:flex flex-col items-end text-right">
-              <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span className="text-[11px] md:text-xs font-bold text-slate-800 flex items-center gap-1">
                 <span className={`w-1.5 h-1.5 rounded-full ${isSuperAdmin ? "bg-amber-400" : "bg-teal-400 animate-pulse"}`} />
-                {currentUser?.name}
-              </span>
-              <span className="text-[9px] uppercase font-mono tracking-wider text-slate-400 font-bold">
-                {isSuperAdmin ? "Super Admin" : "Sekretariat"}
+                {currentUser?.name?.split(" ")[0]}
               </span>
             </div>
 
@@ -1519,14 +1514,14 @@ export default function CMSDashboard() {
               className="p-1.5 rounded-lg border border-red-100 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all cursor-pointer"
               title="Keluar Sesi CMS"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       </header>
 
       {/* COMPACT DASHBOARD GRID CONTAINER */}
-      <div className="flex flex-grow flex-col md:flex-row overflow-hidden relative z-10 md:h-[calc(100vh-73px)]">
+      <div className="flex flex-grow flex-col md:flex-row overflow-hidden relative z-10 md:h-[calc(100vh-73px)] w-full max-w-full">
         
         {/* SIDE BAR NAVIGATION - 7 CUSTOM MODULES MATCHING LANDING PAGE */}
         <aside className={`w-full md:w-64 border-b md:border-b-0 md:border-r p-4 flex flex-col justify-between shadow-xs transition-colors duration-300 ${
@@ -1681,7 +1676,7 @@ export default function CMSDashboard() {
         </aside>
 
         {/* WORKSPACE AREA */}
-        <main className={`${theme === 'light' ? 'cms-main-workspace' : ''} flex-grow p-6 md:p-8 overflow-y-auto md:h-full max-h-full relative z-10`}>
+        <main className={`${theme === 'light' ? 'cms-main-workspace' : ''} flex-grow p-4 md:p-8 overflow-y-auto overflow-x-hidden md:h-full max-h-full w-full max-w-full relative z-10`}>
           
           {/* BANNER NOTIFIKASI SINKRONISASI & ASISTEN SUPABASE */}
           {isSuperAdmin && (
