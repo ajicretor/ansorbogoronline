@@ -555,6 +555,9 @@ Gunakan salam hangat sahabat pemuda Ansor ("Halo Sahabat!", "Assalamu'alaikum wr
       }
       
       res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       return res.send(htmlContent);
     } catch (e) {
       console.error("Router error inside dynamic /news/:newsId handler:", e);
