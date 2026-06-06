@@ -688,11 +688,25 @@ export default function CMSDashboard() {
         console.error("Error fetching users from Supabase:", error);
         const msg = error.message;
         if (msg.includes("schema cache") || msg.includes("does not exist") || msg.includes("404")) {
-          setSupabaseUsersError("Tabel 'ansor_bogor_users' belum terbuat dalam Supabase Anda. Website otomatis beralih menggunakan akun simulasi/demo di bawah agar fungsionalitas login & demo tetap bekerja prima.");
-          setSupabaseUsers(LOCAL_FALLBACK_USERS);
+          setSupabaseUsersError("Tabel 'ansor_bogor_users' belum terbuat dalam Supabase Anda. Akun baru tetap bisa dikelola dan aktif via penyimpanan cloud JSON.");
+          
+          // Merge local JSON backups
+          const merged = [...LOCAL_FALLBACK_USERS];
+          users.forEach((u) => {
+            if (!merged.some(x => x.username.toLowerCase() === u.username.toLowerCase())) {
+              merged.push(u);
+            }
+          });
+          setSupabaseUsers(merged);
         } else {
           setSupabaseUsersError(msg);
-          setSupabaseUsers(LOCAL_FALLBACK_USERS);
+          const merged = [...LOCAL_FALLBACK_USERS];
+          users.forEach((u) => {
+            if (!merged.some(x => x.username.toLowerCase() === u.username.toLowerCase())) {
+              merged.push(u);
+            }
+          });
+          setSupabaseUsers(merged);
         }
       } else if (data) {
         const mapped: CMSUser[] = data.map((u: any, idx: number) => ({
@@ -702,12 +716,27 @@ export default function CMSDashboard() {
           name: u.name,
           role: (u.role === "superadmin" ? "superadmin" : u.role === "ketuacabang" ? "ketuacabang" : "sekretariat") as "superadmin" | "sekretariat" | "ketuacabang"
         }));
-        setSupabaseUsers(mapped);
+
+        // Merge key-value JSON store users too so everything is 100% synchronized
+        const merged = [...mapped];
+        users.forEach((u) => {
+          if (!merged.some(x => x.username.toLowerCase() === u.username.toLowerCase())) {
+            merged.push(u);
+          }
+        });
+
+        setSupabaseUsers(merged);
       }
     } catch (err: any) {
       console.error("Failed to fetch custom users:", err);
       setSupabaseUsersError("Gagal menghubungkan basis data. Menampilkan akun demo bawaan.");
-      setSupabaseUsers(LOCAL_FALLBACK_USERS);
+      const merged = [...LOCAL_FALLBACK_USERS];
+      users.forEach((u) => {
+        if (!merged.some(x => x.username.toLowerCase() === u.username.toLowerCase())) {
+          merged.push(u);
+        }
+      });
+      setSupabaseUsers(merged);
     } finally {
       setIsLoadingSupabaseUsers(false);
     }
@@ -748,6 +777,24 @@ export default function CMSDashboard() {
 
     try {
       setIsLoadingSupabaseUsers(true);
+      
+      // Update local and key-value store first for high availability
+      const newUserObj: CMSUser = {
+        id: cleanedUsername,
+        username: cleanedUsername,
+        passwordHash: userForm.passwordHash,
+        name: userForm.name,
+        role: userForm.role
+      };
+      const updatedUsersList = [...users];
+      const existIdx = updatedUsersList.findIndex(u => u.username.toLowerCase() === cleanedUsername);
+      if (existIdx > -1) {
+        updatedUsersList[existIdx] = newUserObj;
+      } else {
+        updatedUsersList.push(newUserObj);
+      }
+      setUsers(updatedUsersList);
+
       const { error } = await supabase
         .from("ansor_bogor_users")
         .upsert({
@@ -758,18 +805,18 @@ export default function CMSDashboard() {
         });
 
       if (error) {
-        console.error("Error upserting user:", error);
+        console.error("Error upserting user directly in table:", error);
         const msg = error.message || "";
         if (msg.includes("schema cache") || msg.includes("does not exist") || msg.includes("404")) {
-          triggerToast("Tabel 'ansor_bogor_users' belum terpasang di Supabase. Tempel & jalankan instruksi SQL di editor Supabase Anda!", "error");
+          triggerToast("Akun dikonfigurasi via penyimpan cloud JSON (tabel custom 'ansor_bogor_users' belum dibuat, gunakan tab panduan sinkronisasi SQL untuk performa relasional penuh).", "success");
         } else {
-          triggerToast(`Gagal menyimpan pengguna ke database: ${error.message}`, "error");
+          triggerToast(`Simpan ke tabel gagal, tetapi sesi cadangan aktif: ${error.message}`, "error");
         }
       } else {
         triggerToast(isEditingUser ? "Informasi akun pengguna berhasil diperbarui di Supabase!" : "Akun pengelola baru berhasil ditambahkan ke Supabase!");
-        resetUserForm();
-        await fetchSupabaseUsers();
       }
+      resetUserForm();
+      await fetchSupabaseUsers();
     } catch (err: any) {
       console.error("Failed to submit user to Supabase:", err);
       triggerToast(`Koneksi database terputus: ${err.message || err}`, "error");
@@ -793,26 +840,32 @@ export default function CMSDashboard() {
     if (confirm(`Apakah Anda yakin ingin menghapus akun pengelola '${username}' dari database Supabase?`)) {
       try {
         setIsLoadingSupabaseUsers(true);
+
+        // Delete from local schema context first
+        const updatedUsersList = users.filter(u => u.username.toLowerCase() !== username.toLowerCase());
+        setUsers(updatedUsersList);
+
         const { error } = await supabase
           .from("ansor_bogor_users")
           .delete()
           .eq("username", username);
 
         if (error) {
-          console.error("Error deleting user:", error);
+          console.error("Error deleting user from table:", error);
           const msg = error.message || "";
           if (msg.includes("schema cache") || msg.includes("does not exist") || msg.includes("404")) {
-            triggerToast("Gagal menghapus: Tabel 'ansor_bogor_users' belum dibuat di database Supabase Anda.", "error");
+            triggerToast("Pengelola dihapus dari penyimpanan cloud JSON (tabel custom 'ansor_bogor_users' belum ada).", "success");
           } else {
-            triggerToast(`Gagal menghapus pengguna: ${error.message}`, "error");
+            triggerToast(`Gagal menghapus dari table, namun dihapus dari cloud JSON: ${error.message}`, "error");
           }
         } else {
           triggerToast(`Pengelola '${username}' berhasil dihapus secara permanen.`);
-          if (userEditingId === username) {
-            resetUserForm();
-          }
-          await fetchSupabaseUsers();
         }
+        
+        if (userEditingId === username) {
+          resetUserForm();
+        }
+        await fetchSupabaseUsers();
       } catch (err: any) {
         console.error("Error deleting user from database:", err);
         triggerToast(`Koneksi terputus: ${err.message || err}`, "error");
