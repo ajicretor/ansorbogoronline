@@ -113,6 +113,12 @@ async function startServer() {
 
   // API Route for Secure Login
   app.post("/api/login", async (req, res) => {
+    let cmsErrDetail = null;
+    let tableErrDetail = null;
+    let cmsResultLength = 0;
+    let tableResultLength = 0;
+    let dbUsersLogged: string[] = [];
+
     try {
       const { username, password } = req.body;
       if (!username || !password) {
@@ -126,8 +132,32 @@ async function startServer() {
       const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "https://ccalbsgweohipcvxauli.supabase.co";
       const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjYWxic2d3ZW9oaXBjdnhhdWxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDc5MjQsImV4cCI6MjA5NTYyMzkyNH0.olxAt361Hyb0cLSM_B5V2ZOMibWVgawYgFSmnPK0nuc";
 
-      const cleanUrl = supabaseUrl.replace(/['"]/g, "").trim().replace(/\/+$/, "");
-      const cleanKey = supabaseKey.replace(/['"]/g, "").trim();
+      const sanitizeSupabaseUrl = (urlStr: string) => {
+        let clean = urlStr.trim();
+        if (clean.startsWith('"') && clean.endsWith('"')) clean = clean.slice(1, -1);
+        if (clean.startsWith("'") && clean.endsWith("'")) clean = clean.slice(1, -1);
+        clean = clean.trim();
+        try {
+          const parsed = new URL(clean);
+          if (parsed.pathname.includes('/rest/v1')) return parsed.origin;
+          if (parsed.hostname.endsWith('.supabase.co') || parsed.hostname.endsWith('.supabase.in') || parsed.hostname.endsWith('.supabase.net')) {
+            return parsed.origin;
+          }
+        } catch (e) {}
+        clean = clean.replace(/\/rest\/v1\b.*/i, "");
+        while (clean.endsWith("/")) clean = clean.slice(0, -1);
+        return clean;
+      };
+
+      const sanitizeSupabaseKey = (keyStr: string) => {
+        let clean = keyStr.trim();
+        if (clean.startsWith('"') && clean.endsWith('"')) clean = clean.slice(1, -1);
+        if (clean.startsWith("'") && clean.endsWith("'")) clean = clean.slice(1, -1);
+        return clean.trim();
+      };
+
+      const cleanUrl = sanitizeSupabaseUrl(supabaseUrl);
+      const cleanKey = sanitizeSupabaseKey(supabaseKey);
 
       if (cleanUrl && cleanKey) {
         const dbUsers: any[] = [];
@@ -135,16 +165,42 @@ async function startServer() {
 
         // 1. Fetch from 'ansor_bogor_cms' table with key 'ansor_bogor_users' (holds user array)
         try {
-          console.log(`Fetching dynamic users from 'ansor_bogor_cms' JSON store via SDK: ${cleanUrl}`);
-          const { data: cmsResData, error: cmsErr } = await supabase
-            .from("ansor_bogor_cms")
-            .select("value")
-            .eq("key", "ansor_bogor_users");
+          console.log(`Fetching dynamic users from 'ansor_bogor_cms' via comprehensive dual-querying...`);
+          
+          let cmsUsersList: any[] | null = null;
 
-          if (cmsErr) {
-            console.warn("Error querying 'ansor_bogor_cms' users via SDK:", cmsErr.message);
-          } else if (Array.isArray(cmsResData) && cmsResData.length > 0 && Array.isArray(cmsResData[0]?.value)) {
-            const cmsUsersList = cmsResData[0].value;
+          // Technique A: Query entire key, value (exactly matched with client's getSupabaseCMSData)
+          const { data: allCmsData, error: allCmsErr } = await supabase
+            .from("ansor_bogor_cms")
+            .select("key, value");
+
+          if (!allCmsErr && Array.isArray(allCmsData)) {
+            const userRow = allCmsData.find(row => row.key === "ansor_bogor_users");
+            if (userRow && Array.isArray(userRow.value)) {
+              console.log("Successfully retrieved users list via Technique A (Full table scan).");
+              cmsUsersList = userRow.value;
+            }
+          }
+
+          // Technique B Fallback: Query specifically with .eq filter
+          if (!cmsUsersList) {
+            console.log("Technique A empty or failed. Attempting Technique B (.eq filter)...");
+            const { data: cmsResData, error: cmsErr } = await supabase
+              .from("ansor_bogor_cms")
+              .select("value")
+              .eq("key", "ansor_bogor_users");
+
+            if (cmsErr) {
+              console.warn("Technique B error querying 'ansor_bogor_cms':", cmsErr.message);
+              cmsErrDetail = cmsErr.message;
+            } else if (Array.isArray(cmsResData) && cmsResData.length > 0 && Array.isArray(cmsResData[0]?.value)) {
+              console.log("Successfully retrieved users list via Technique B.");
+              cmsUsersList = cmsResData[0].value;
+            }
+          }
+
+          if (cmsUsersList && Array.isArray(cmsUsersList)) {
+            cmsResultLength = cmsUsersList.length;
             console.log(`Loaded ${cmsUsersList.length} users from CMS key-value JSON store.`);
             cmsUsersList.forEach((row: any) => {
               const rowUsername = (row.username || row.user || '').trim().toLowerCase();
@@ -153,6 +209,9 @@ async function startServer() {
               const rowRole = (row.role || row.jabatan || 'sekretariat').trim().toLowerCase();
 
               if (rowUsername && rowPassword) {
+                if (!dbUsersLogged.includes(rowUsername)) {
+                  dbUsersLogged.push(rowUsername);
+                }
                 dbUsers.push({
                   id: row.id || `cms-user-${rowUsername}`,
                   username: rowUsername,
@@ -162,9 +221,12 @@ async function startServer() {
                 });
               }
             });
+          } else {
+            console.log("No dynamic users inside 'ansor_bogor_cms' JSON store 'ansor_bogor_users' key.");
           }
-        } catch (err) {
-          console.error("Failed to fetch users from ansor_bogor_cms key 'ansor_bogor_users':", err);
+        } catch (err: any) {
+          console.error("Failed to fetch users from ansor_bogor_cms key 'ansor_bogor_users' via dual channels:", err);
+          cmsErrDetail = err.message || String(err);
         }
 
         // 2. Fetch from traditional 'ansor_bogor_users' custom table
@@ -176,7 +238,9 @@ async function startServer() {
 
           if (tableErr) {
             console.log("No custom 'ansor_bogor_users' table found or failed to read (using other sources):", tableErr.message);
+            tableErrDetail = tableErr.message;
           } else if (Array.isArray(tableResData) && tableResData.length > 0) {
+            tableResultLength = tableResData.length;
             console.log(`Loaded ${tableResData.length} users from custom 'ansor_bogor_users' table.`);
             tableResData.forEach((row: any, idx: number) => {
               const rowUsername = (row.username || row.user || '').trim().toLowerCase();
@@ -185,6 +249,7 @@ async function startServer() {
               const rowRole = (row.role || row.jabatan || 'sekretariat').trim().toLowerCase();
 
               if (rowUsername && rowPassword) {
+                dbUsersLogged.push(rowUsername);
                 dbUsers.push({
                   id: row.id || `table-user-${idx + 1}`,
                   username: rowUsername,
@@ -195,8 +260,9 @@ async function startServer() {
               }
             });
           }
-        } catch (dbErr) {
+        } catch (dbErr: any) {
           console.log("No custom 'ansor_bogor_users' table found or failed to read:", dbErr);
+          tableErrDetail = dbErr.message || String(dbErr);
         }
 
         // 3. Merge users into activeUsers (prioritizing DB accounts but keeping default fallback accounts)
@@ -240,7 +306,15 @@ async function startServer() {
         return res.status(401).json({
           success: false,
           error: "Kombinasi Username & Password tidak sesuai!",
-          debugUsernames: activeUsers.map(x => x.username)
+          debugUsernames: activeUsers.map(x => x.username),
+          diagnostics: {
+            cmsResultLength,
+            tableResultLength,
+            dbUsersLogged,
+            cmsErrDetail,
+            tableErrDetail,
+            urlPrefix: cleanUrl ? `${cleanUrl.substring(0, 18)}...` : null
+          }
         });
       }
     } catch (err: any) {

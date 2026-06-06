@@ -54,11 +54,13 @@ export default function CMSDashboard() {
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [authDiagnostics, setAuthDiagnostics] = useState<any>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
+    setAuthDiagnostics(null);
     setIsLoadingAuth(true);
 
     const u = loginUsername.trim();
@@ -89,6 +91,9 @@ export default function CMSDashboard() {
         } else if (res.status === 401) {
           const errData = await res.json();
           debugUsernames = errData.debugUsernames || [];
+          if (errData.diagnostics) {
+            setAuthDiagnostics(errData.diagnostics);
+          }
           
           // Attempt client-side fallback check instantly so the user can log in even if DB is not fully propagated on backend
           const lowerU = u.toLowerCase();
@@ -1403,9 +1408,24 @@ export default function CMSDashboard() {
           {/* Form Element */}
           <form onSubmit={handleLoginSubmit} className="space-y-4 text-left">
             {loginError && (
-              <div className="bg-red-50 border border-red-200 text-red-800 p-3.5 rounded-xl text-xs font-semibold leading-relaxed flex items-center gap-2.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 animate-ping" />
-                <span>{loginError}</span>
+              <div className="bg-red-50 border border-red-200 text-red-800 p-3.5 rounded-xl text-xs font-semibold leading-relaxed flex flex-col gap-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0 animate-ping" />
+                  <span>{loginError}</span>
+                </div>
+                {authDiagnostics && (
+                  <div className="mt-2 pt-2 border-t border-red-150 text-[10px] text-slate-600 font-mono space-y-1 bg-white/60 p-2 rounded-lg leading-normal">
+                    <p className="font-bold text-red-900 border-b pb-0.5 mb-1 font-sans">🔍 STATUS PENYIMPANAN CLOUD & DB:</p>
+                    <p>● Endpoint: <span className="text-emerald-700 font-bold">{authDiagnostics.urlPrefix || "Tidak Terdeteksi"}</span></p>
+                    <p>● CMS JSON Store ('ansor_bogor_cms'): <span className="font-bold text-slate-800">{authDiagnostics.cmsResultLength} akun aktif</span></p>
+                    <p>● Tabular Store ('ansor_bogor_users'): <span className="font-bold text-slate-800">{authDiagnostics.tableResultLength} akun aktif</span></p>
+                    {authDiagnostics.dbUsersLogged && authDiagnostics.dbUsersLogged.length > 0 && (
+                      <p>● Akun yang terdaftar di Cloud: <span className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700 font-bold">{authDiagnostics.dbUsersLogged.join(", ")}</span></p>
+                    )}
+                    {authDiagnostics.cmsErrDetail && <p className="text-amber-700">⚠️ CMS Error: {authDiagnostics.cmsErrDetail}</p>}
+                    {authDiagnostics.tableErrDetail && <p className="text-amber-750">⚠️ Table Error: {authDiagnostics.tableErrDetail}</p>}
+                  </div>
+                )}
               </div>
             )}
 
