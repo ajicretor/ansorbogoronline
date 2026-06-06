@@ -254,11 +254,11 @@ export default function CMSDashboard() {
         const parsed = JSON.parse(persisted);
         if (parsed.sekretariat) {
           if (!parsed.sekretariat.includes("analytics")) parsed.sekretariat.push("analytics");
-          if (!parsed.sekretariat.includes("registrants")) parsed.sekretariat.push("registrants");
+          parsed.sekretariat = parsed.sekretariat.filter((t: string) => t !== "registrants");
         }
         if (parsed.ketuacabang) {
           if (!parsed.ketuacabang.includes("analytics")) parsed.ketuacabang.push("analytics");
-          if (!parsed.ketuacabang.includes("registrants")) parsed.ketuacabang.push("registrants");
+          parsed.ketuacabang = parsed.ketuacabang.filter((t: string) => t !== "registrants");
         }
         return parsed;
       }
@@ -266,8 +266,8 @@ export default function CMSDashboard() {
       console.error("Error loading role permissions:", e);
     }
     return {
-      sekretariat: ["news", "gallery", "analytics", "registrants"],
-      ketuacabang: ["news", "gallery", "analytics", "registrants"]
+      sekretariat: ["news", "gallery", "analytics"],
+      ketuacabang: ["news", "gallery", "analytics"]
     };
   });
 
@@ -280,12 +280,10 @@ export default function CMSDashboard() {
   useEffect(() => {
     if (currentUser && currentUser.role !== "superadmin") {
       const role = currentUser.role;
-      const allowed = rolePermissions[role] || [];
-      if (!allowed.includes(activeTab)) {
-        const fallback = allowed.length > 0 ? allowed[0] : null;
-        if (fallback) {
-          setActiveTab(fallback);
-        }
+      const allowed = (rolePermissions[role] || []).filter(t => t !== "registrants");
+      if (!allowed.includes(activeTab) || activeTab === "registrants") {
+        const fallback = allowed.length > 0 ? allowed[0] : "general";
+        setActiveTab(fallback as TabType);
       }
     }
   }, [currentUser, activeTab, rolePermissions]);
@@ -1692,6 +1690,9 @@ export default function CMSDashboard() {
             ].map((section) => {
               // Filter out items in the section that are NOT permitted for current user
               const permittedItems = section.items.filter(tabItem => {
+                if (tabItem.key === "registrants") {
+                  return isSuperAdmin;
+                }
                 return isSuperAdmin || (currentUser && rolePermissions[currentUser.role]?.includes(tabItem.key));
               });
 
@@ -5069,7 +5070,6 @@ ON CONFLICT (username) DO NOTHING;`}
                         { key: "general" as const, label: "Branding & Hero" },
                         { key: "about" as const, label: "Tentang & Pilar" },
                         { key: "programs" as const, label: "Program Kerja" },
-                        { key: "registrants" as const, label: "Calon Anggota" },
                         { key: "news" as const, label: "Berita (News)" },
                         { key: "gallery" as const, label: "Galeri Kegiatan" },
                         { key: "leaders" as const, label: "Dewan Pimpinan" },
@@ -5121,7 +5121,6 @@ ON CONFLICT (username) DO NOTHING;`}
                         { key: "general" as const, label: "Branding & Hero" },
                         { key: "about" as const, label: "Tentang & Pilar" },
                         { key: "programs" as const, label: "Program Kerja" },
-                        { key: "registrants" as const, label: "Calon Anggota" },
                         { key: "news" as const, label: "Berita (News)" },
                         { key: "gallery" as const, label: "Galeri Kegiatan" },
                         { key: "leaders" as const, label: "Dewan Pimpinan" },
