@@ -1674,7 +1674,7 @@ export default function CMSDashboard() {
                 id: "kaderisasi-layanan",
                 title: "KADERISASI & LAYANAN",
                 items: [
-                  { key: "registrants" as const, label: "Calon Anggota", icon: ShieldCheck },
+                  ...(isSuperAdmin ? [{ key: "registrants" as const, label: "Calon Anggota", icon: ShieldCheck }] : []),
                   { key: "services" as const, label: "Layanan Digital", icon: Smartphone },
                 ]
               },
@@ -5419,8 +5419,17 @@ ON CONFLICT (username) DO NOTHING;`}
             </div>
           )}
 
-          {/* --- 11. REGISTRANTS REVIEW MENU --- */}
+           {/* --- 11. REGISTRANTS REVIEW MENU --- */}
           {activeTab === "registrants" && (() => {
+            if (!isSuperAdmin) {
+              return (
+                <div className="p-8 text-center bg-red-500/5 border border-red-500/10 rounded-2xl flex flex-col items-center justify-center gap-3">
+                  <ShieldCheck className="w-12 h-12 text-red-500/60" />
+                  <p className="font-extrabold text-sm text-red-500">Akses Ditolak</p>
+                  <p className="text-xs text-slate-400">Daftar penerimaan Calon Anggota hanya bisa diakses oleh akun tingkat Super Admin.</p>
+                </div>
+              );
+            }
             const getWhatsAppCleanUrl = (phone: string, name: string) => {
               let clean = phone.replace(/\D/g, "");
               if (clean.startsWith("0")) {
