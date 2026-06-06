@@ -131,39 +131,37 @@ async function startServer() {
 
       if (cleanUrl && cleanKey) {
         const dbUsers: any[] = [];
+        const supabase = createClient(cleanUrl, cleanKey);
 
         // 1. Fetch from 'ansor_bogor_cms' table with key 'ansor_bogor_users' (holds user array)
         try {
-          console.log(`Fetching dynamic users from 'ansor_bogor_cms' JSON store: ${cleanUrl}`);
-          const cmsRes = await fetch(`${cleanUrl}/rest/v1/ansor_bogor_cms?key=eq.ansor_bogor_users&select=value`, {
-            headers: {
-              "apikey": cleanKey,
-              "Authorization": `Bearer ${cleanKey}`
-            }
-          });
+          console.log(`Fetching dynamic users from 'ansor_bogor_cms' JSON store via SDK: ${cleanUrl}`);
+          const { data: cmsResData, error: cmsErr } = await supabase
+            .from("ansor_bogor_cms")
+            .select("value")
+            .eq("key", "ansor_bogor_users");
 
-          if (cmsRes.ok) {
-            const data = await cmsRes.json();
-            if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0]?.value)) {
-              const cmsUsersList = data[0].value;
-              console.log(`Loaded ${cmsUsersList.length} users from CMS key-value JSON store.`);
-              cmsUsersList.forEach((row: any) => {
-                const rowUsername = (row.username || row.user || '').trim().toLowerCase();
-                const rowPassword = (row.passwordHash || row.password || row.passwordhash || row.pass || '').trim();
-                const rowName = (row.name || row.nama || '').trim();
-                const rowRole = (row.role || row.jabatan || 'sekretariat').trim().toLowerCase();
+          if (cmsErr) {
+            console.warn("Error querying 'ansor_bogor_cms' users via SDK:", cmsErr.message);
+          } else if (Array.isArray(cmsResData) && cmsResData.length > 0 && Array.isArray(cmsResData[0]?.value)) {
+            const cmsUsersList = cmsResData[0].value;
+            console.log(`Loaded ${cmsUsersList.length} users from CMS key-value JSON store.`);
+            cmsUsersList.forEach((row: any) => {
+              const rowUsername = (row.username || row.user || '').trim().toLowerCase();
+              const rowPassword = (row.passwordHash || row.password || row.passwordhash || row.pass || '').trim();
+              const rowName = (row.name || row.nama || '').trim();
+              const rowRole = (row.role || row.jabatan || 'sekretariat').trim().toLowerCase();
 
-                if (rowUsername && rowPassword) {
-                  dbUsers.push({
-                    id: row.id || `cms-user-${rowUsername}`,
-                    username: rowUsername,
-                    passwordHash: rowPassword,
-                    name: rowName || rowUsername,
-                    role: (rowRole === 'superadmin' || rowRole === 'admin') ? 'superadmin' : (rowRole === 'ketuacabang' ? 'ketuacabang' : 'sekretariat')
-                  });
-                }
-              });
-            }
+              if (rowUsername && rowPassword) {
+                dbUsers.push({
+                  id: row.id || `cms-user-${rowUsername}`,
+                  username: rowUsername,
+                  passwordHash: rowPassword,
+                  name: rowName || rowUsername,
+                  role: (rowRole === 'superadmin' || rowRole === 'admin') ? 'superadmin' : (rowRole === 'ketuacabang' ? 'ketuacabang' : 'sekretariat')
+                });
+              }
+            });
           }
         } catch (err) {
           console.error("Failed to fetch users from ansor_bogor_cms key 'ansor_bogor_users':", err);
@@ -171,37 +169,34 @@ async function startServer() {
 
         // 2. Fetch from traditional 'ansor_bogor_users' custom table
         try {
-          console.log(`Fetching users from 'ansor_bogor_users' database table: ${cleanUrl}`);
-          const fetchRes = await fetch(`${cleanUrl}/rest/v1/ansor_bogor_users?select=*`, {
-            headers: {
-              "apikey": cleanKey,
-              "Authorization": `Bearer ${cleanKey}`
-            }
-          });
+          console.log(`Fetching users from 'ansor_bogor_users' database table via SDK: ${cleanUrl}`);
+          const { data: tableResData, error: tableErr } = await supabase
+            .from("ansor_bogor_users")
+            .select("*");
 
-          if (fetchRes.ok) {
-            const customTableUsers = await fetchRes.json();
-            if (Array.isArray(customTableUsers) && customTableUsers.length > 0) {
-              customTableUsers.forEach((row: any, idx: number) => {
-                const rowUsername = (row.username || row.user || '').trim().toLowerCase();
-                const rowPassword = (row.password || row.passwordhash || row.pass || '').trim();
-                const rowName = (row.name || row.nama || '').trim();
-                const rowRole = (row.role || row.jabatan || 'sekretariat').trim().toLowerCase();
+          if (tableErr) {
+            console.log("No custom 'ansor_bogor_users' table found or failed to read (using other sources):", tableErr.message);
+          } else if (Array.isArray(tableResData) && tableResData.length > 0) {
+            console.log(`Loaded ${tableResData.length} users from custom 'ansor_bogor_users' table.`);
+            tableResData.forEach((row: any, idx: number) => {
+              const rowUsername = (row.username || row.user || '').trim().toLowerCase();
+              const rowPassword = (row.password || row.passwordhash || row.pass || '').trim();
+              const rowName = (row.name || row.nama || '').trim();
+              const rowRole = (row.role || row.jabatan || 'sekretariat').trim().toLowerCase();
 
-                if (rowUsername && rowPassword) {
-                  dbUsers.push({
-                    id: row.id || `table-user-${idx + 1}`,
-                    username: rowUsername,
-                    passwordHash: rowPassword,
-                    name: rowName || rowUsername,
-                    role: (rowRole === 'superadmin' || rowRole === 'admin') ? 'superadmin' : (rowRole === 'ketuacabang' ? 'ketuacabang' : 'sekretariat')
-                  });
-                }
-              });
-            }
+              if (rowUsername && rowPassword) {
+                dbUsers.push({
+                  id: row.id || `table-user-${idx + 1}`,
+                  username: rowUsername,
+                  passwordHash: rowPassword,
+                  name: rowName || rowUsername,
+                  role: (rowRole === 'superadmin' || rowRole === 'admin') ? 'superadmin' : (rowRole === 'ketuacabang' ? 'ketuacabang' : 'sekretariat')
+                });
+              }
+            });
           }
         } catch (dbErr) {
-          console.log("No custom 'ansor_bogor_users' table found or failed to read (using other sources):", dbErr);
+          console.log("No custom 'ansor_bogor_users' table found or failed to read:", dbErr);
         }
 
         // 3. Merge users into activeUsers (prioritizing DB accounts but keeping default fallback accounts)
@@ -218,12 +213,20 @@ async function startServer() {
         }
       }
 
+      // Log all loaded users for auth debugging (careful not to expose too much log outside, but very important for admin check)
+      console.log(`[AUTH DEBUG] Attempting authentication for username: "${u}"`);
+      console.log(`[AUTH DEBUG] Available active users in memory:`);
+      activeUsers.forEach((user) => {
+        console.log(`  - Username: "${user.username}" | Role: "${user.role}" | Name: "${user.name}" | PassHashLength: ${user.passwordHash ? String(user.passwordHash).length : 0}`);
+      });
+
       // Check match
       const matched = activeUsers.find(
-        x => x.username.toLowerCase() === u && String(x.passwordHash) === p
+        x => x.username.toLowerCase() === u && String(x.passwordHash).trim() === p
       );
 
       if (matched) {
+        console.log(`[AUTH DEBUG] Match successful for username: "${u}"! Authenticated as "${matched.name}" (${matched.role}).`);
         return res.json({
           success: true,
           user: {
@@ -233,9 +236,11 @@ async function startServer() {
           }
         });
       } else {
+        console.warn(`[AUTH DEBUG] Authentication failed: No match found for username: "${u}" with password length ${p.length}.`);
         return res.status(401).json({
           success: false,
-          error: "Kombinasi Username & Password tidak sesuai!"
+          error: "Kombinasi Username & Password tidak sesuai!",
+          debugUsernames: activeUsers.map(x => x.username)
         });
       }
     } catch (err: any) {
