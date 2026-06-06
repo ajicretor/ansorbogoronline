@@ -113,7 +113,7 @@ async function startServer() {
       const u = username.trim().toLowerCase();
       const p = password.trim();
 
-      let activeUsers = DEFAULT_SERVER_USERS;
+      let activeUsers = [...DEFAULT_SERVER_USERS];
       const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "https://ccalbsgweohipcvxauli.supabase.co";
       const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjYWxic2d3ZW9oaXBjdnhhdWxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDc5MjQsImV4cCI6MjA5NTYyMzkyNH0.olxAt361Hyb0cLSM_B5V2ZOMibWVgawYgFSmnPK0nuc";
 
@@ -121,8 +121,48 @@ async function startServer() {
       const cleanKey = supabaseKey.replace(/['"]/g, "").trim();
 
       if (cleanUrl && cleanKey) {
+        const dbUsers: any[] = [];
+
+        // 1. Fetch from 'ansor_bogor_cms' table with key 'ansor_bogor_users' (holds user array)
         try {
-          console.log(`Fetching CMS users from Supabase DB: ${cleanUrl}`);
+          console.log(`Fetching dynamic users from 'ansor_bogor_cms' JSON store: ${cleanUrl}`);
+          const cmsRes = await fetch(`${cleanUrl}/rest/v1/ansor_bogor_cms?key=eq.ansor_bogor_users&select=value`, {
+            headers: {
+              "apikey": cleanKey,
+              "Authorization": `Bearer ${cleanKey}`
+            }
+          });
+
+          if (cmsRes.ok) {
+            const data = await cmsRes.json();
+            if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0]?.value)) {
+              const cmsUsersList = data[0].value;
+              console.log(`Loaded ${cmsUsersList.length} users from CMS key-value JSON store.`);
+              cmsUsersList.forEach((row: any) => {
+                const rowUsername = (row.username || row.user || '').trim().toLowerCase();
+                const rowPassword = (row.passwordHash || row.password || row.passwordhash || row.pass || '').trim();
+                const rowName = (row.name || row.nama || '').trim();
+                const rowRole = (row.role || row.jabatan || 'sekretariat').trim().toLowerCase();
+
+                if (rowUsername && rowPassword) {
+                  dbUsers.push({
+                    id: row.id || `cms-user-${rowUsername}`,
+                    username: rowUsername,
+                    passwordHash: rowPassword,
+                    name: rowName || rowUsername,
+                    role: (rowRole === 'superadmin' || rowRole === 'admin') ? 'superadmin' : (rowRole === 'ketuacabang' ? 'ketuacabang' : 'sekretariat')
+                  });
+                }
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch users from ansor_bogor_cms key 'ansor_bogor_users':", err);
+        }
+
+        // 2. Fetch from traditional 'ansor_bogor_users' custom table
+        try {
+          console.log(`Fetching users from 'ansor_bogor_users' database table: ${cleanUrl}`);
           const fetchRes = await fetch(`${cleanUrl}/rest/v1/ansor_bogor_users?select=*`, {
             headers: {
               "apikey": cleanKey,
@@ -131,37 +171,41 @@ async function startServer() {
           });
 
           if (fetchRes.ok) {
-            const dbUsers = await fetchRes.json();
-            if (Array.isArray(dbUsers) && dbUsers.length > 0) {
-              const converted = dbUsers.map((row: any, idx: number) => {
+            const customTableUsers = await fetchRes.json();
+            if (Array.isArray(customTableUsers) && customTableUsers.length > 0) {
+              customTableUsers.forEach((row: any, idx: number) => {
                 const rowUsername = (row.username || row.user || '').trim().toLowerCase();
                 const rowPassword = (row.password || row.passwordhash || row.pass || '').trim();
                 const rowName = (row.name || row.nama || '').trim();
                 const rowRole = (row.role || row.jabatan || 'sekretariat').trim().toLowerCase();
 
-                return {
-                  id: row.id || `db-${idx + 1}`,
-                  username: rowUsername,
-                  passwordHash: rowPassword,
-                  name: rowName || rowUsername,
-                  role: (rowRole === 'superadmin' || rowRole === 'admin') ? 'superadmin' : (rowRole === 'ketuacabang' ? 'ketuacabang' : 'sekretariat')
-                };
-              }).filter(user => user.username && user.passwordHash);
-
-              if (converted.length > 0) {
-                activeUsers = converted;
-                console.log(`Loaded ${converted.length} users successfully from Supabase "ansor_bogor_users" table.`);
-              } else {
-                console.warn("Supabase user query parsed but produced no valid users. Utilizing fallback users.");
-              }
-            } else {
-              console.warn("Supabase user array was empty or invalid format. Utilizing fallback users.");
+                if (rowUsername && rowPassword) {
+                  dbUsers.push({
+                    id: row.id || `table-user-${idx + 1}`,
+                    username: rowUsername,
+                    passwordHash: rowPassword,
+                    name: rowName || rowUsername,
+                    role: (rowRole === 'superadmin' || rowRole === 'admin') ? 'superadmin' : (rowRole === 'ketuacabang' ? 'ketuacabang' : 'sekretariat')
+                  });
+                }
+              });
             }
-          } else {
-            console.error(`Supabase fetch failed with status ${fetchRes.status}. Utilizing fallback users.`);
           }
         } catch (dbErr) {
-          console.error("Error reading Supabase users, falling back to server default users:", dbErr);
+          console.log("No custom 'ansor_bogor_users' table found or failed to read (using other sources):", dbErr);
+        }
+
+        // 3. Merge users into activeUsers (prioritizing DB accounts but keeping default fallback accounts)
+        if (dbUsers.length > 0) {
+          dbUsers.forEach((dbUser) => {
+            const idx = activeUsers.findIndex(u => u.username.toLowerCase() === dbUser.username.toLowerCase());
+            if (idx > -1) {
+              activeUsers[idx] = dbUser;
+            } else {
+              activeUsers.push(dbUser);
+            }
+          });
+          console.log(`Total merged active users for auth: ${activeUsers.length}`);
         }
       }
 
