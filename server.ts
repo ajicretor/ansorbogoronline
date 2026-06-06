@@ -102,6 +102,12 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Serve ads.txt for Google AdSense verification crawler
+  app.get("/ads.txt", (req, res) => {
+    res.setHeader("Content-Type", "text/plain");
+    res.send("google.com, pub-8464064075635048, DIRECT, f08c47fec0942fa0");
+  });
+
   // API Route for Secure Login
   app.post("/api/login", async (req, res) => {
     try {
