@@ -1873,10 +1873,10 @@ export default function CMSDashboard() {
                       <button
                         type="button"
                         onClick={() => {
-                          const sqlCode = `-- 1. BUAT TABEL CMS KONTEN UTAMA\nCREATE TABLE IF NOT EXISTS public.ansor_bogor_cms (\n    key text PRIMARY KEY,\n    value jsonb DEFAULT '{}'::jsonb,\n    updated_at timestamp with time zone DEFAULT now()\n);\n\n-- AKTIFKAN ATURAN KEAMANAN ROW LEVEL SECURITY (RLS)\nALTER TABLE public.ansor_bogor_cms ENABLE ROW LEVEL SECURITY;\n\n-- BUAT POLICIES SUPABASE AGAR DATA BISA DI-UPDATE LANGSUNG DARI WEB\nDROP POLICY IF EXISTS "Allow public read access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public read access to CMS data" \n    ON public.ansor_bogor_cms FOR SELECT USING (true);\n\nDROP POLICY IF EXISTS "Allow public insert access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public insert access to CMS data" \n    ON public.ansor_bogor_cms FOR INSERT WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public update access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public update access to CMS data" \n    ON public.ansor_bogor_cms FOR UPDATE USING (true) WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public delete access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public delete access to CMS data" \n    ON public.ansor_bogor_cms FOR DELETE USING (true);\n\n\n-- 2. BUAT TABEL AKUN PENGGUNA CMS KUSTOM\nCREATE TABLE IF NOT EXISTS public.ansor_bogor_users (\n    username text PRIMARY KEY,\n    password text NOT NULL,\n    name text NOT NULL,\n    role text NOT NULL DEFAULT 'sekretariat',\n    created_at timestamp with time zone DEFAULT now()\n);\n\n-- AKTIFKAN ATURAN KEAMANAN ROW LEVEL SECURITY (RLS)\nALTER TABLE public.ansor_bogor_users ENABLE ROW LEVEL SECURITY;\n\n-- BUAT POLICIES BAGI TABEL PENGGUNA\nDROP POLICY IF EXISTS "Allow public select access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public select access to Users data" \n    ON public.ansor_bogor_users FOR SELECT USING (true);\n\nDROP POLICY IF EXISTS "Allow public insert/update access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public insert/update access to Users data" \n    ON public.ansor_bogor_users FOR INSERT WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public modify access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public modify access to Users data" \n    ON public.ansor_bogor_users FOR UPDATE USING (true) WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public delete access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public delete access to Users data" \n    ON public.ansor_bogor_users FOR DELETE USING (true);\n\n\n-- 3. SISIPKAN AKUN ADMIN DEFAULT DAN SEKRETARIAT KONDISIONAL\nINSERT INTO public.ansor_bogor_users (username, password, name, role)\nVALUES \n    ('admin', 'adminansor1934', 'Septa Aji', 'superadmin'),\n    ('sekretariat', 'sekretariat1934', 'Sekretariat Cabang', 'sekretariat')\nON CONFLICT (username) DO NOTHING;`;
+                          const sqlCode = `-- 1. BUAT TABEL CMS KONTEN UTAMA\nCREATE TABLE IF NOT EXISTS public.ansor_bogor_cms (\n    key text PRIMARY KEY,\n    value jsonb DEFAULT '{}'::jsonb,\n    updated_at timestamp with time zone DEFAULT now()\n);\n\n-- AKTIFKAN ATURAN KEAMANAN ROW LEVEL SECURITY (RLS)\nALTER TABLE public.ansor_bogor_cms ENABLE ROW LEVEL SECURITY;\n\n-- BUAT POLICIES SUPABASE AGAR DATA BISA DI-UPDATE LANGSUNG DARI WEB\nDROP POLICY IF EXISTS "Allow public read access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public read access to CMS data" \n    ON public.ansor_bogor_cms FOR SELECT USING (true);\n\nDROP POLICY IF EXISTS "Allow public insert access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public insert access to CMS data" \n    ON public.ansor_bogor_cms FOR INSERT WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public update access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public update access to CMS data" \n    ON public.ansor_bogor_cms FOR UPDATE USING (true) WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public delete access to CMS data" ON public.ansor_bogor_cms;\nCREATE POLICY "Allow public delete access to CMS data" \n    ON public.ansor_bogor_cms FOR DELETE USING (true);\n\n\n-- 2. BUAT TABEL AKUN PENGGUNA CMS KUSTOM\nCREATE TABLE IF NOT EXISTS public.ansor_bogor_users (\n    username text PRIMARY KEY,\n    password text NOT NULL,\n    name text NOT NULL,\n    role text NOT NULL DEFAULT 'sekretariat',\n    created_at timestamp with time zone DEFAULT now()\n);\n\n-- AKTIFKAN ATURAN KEAMANAN ROW LEVEL SECURITY (RLS)\nALTER TABLE public.ansor_bogor_users ENABLE ROW LEVEL SECURITY;\n\n-- BUAT POLICIES BAGI TABEL PENGGUNA\nDROP POLICY IF EXISTS "Allow public select access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public select access to Users data" \n    ON public.ansor_bogor_users FOR SELECT USING (true);\n\nDROP POLICY IF EXISTS "Allow public insert/update access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public insert/update access to Users data" \n    ON public.ansor_bogor_users FOR INSERT WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public modify access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public modify access to Users data" \n    ON public.ansor_bogor_users FOR UPDATE USING (true) WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public delete access to Users data" ON public.ansor_bogor_users;\nCREATE POLICY "Allow public delete access to Users data" \n    ON public.ansor_bogor_users FOR DELETE USING (true);\n\n\n-- 3. SISIPKAN AKUN ADMIN DEFAULT DAN SEKRETARIAT KONDISIONAL\nINSERT INTO public.ansor_bogor_users (username, password, name, role)\nVALUES \n    ('admin', 'adminansor1934', 'Septa Aji', 'superadmin'),\n    ('sekretariat', 'sekretariat1934', 'Sekretariat Cabang', 'sekretariat')\nON CONFLICT (username) DO NOTHING;\n\n\n-- 4. BUAT TABEL REKAP PENDAFTARAN KADERISASI DAN CALON ANGGOTA\nCREATE TABLE IF NOT EXISTS public.ansor_bogor_registrants (\n    id text PRIMARY KEY,\n    registration_type text NOT NULL DEFAULT 'member',\n    name text NOT NULL,\n    nik varchar(16) NOT NULL,\n    email text NOT NULL,\n    whatsapp text NOT NULL,\n    district text NOT NULL,\n    reason text,\n    status text NOT NULL DEFAULT 'pending',\n    created_at timestamp with time zone DEFAULT now(),\n    desa text,\n    kabupaten text DEFAULT 'Kabupaten Bogor',\n    tempat_lahir text,\n    tanggal_lahir text,\n    ukuran_kaos varchar(10),\n    pendidikan_akhir text,\n    pendidikan_pesantren text,\n    pekerjaan text,\n    golongan_darah varchar(5),\n    status_pernikahan text,\n    pamflet_file text\n);\n\n-- AKTIFKAN ATURAN KEAMANAN ROW LEVEL SECURITY (RLS) FOR REGISTRANTS\nALTER TABLE public.ansor_bogor_registrants ENABLE ROW LEVEL SECURITY;\n\n-- BUAT POLICIES BAGI TABEL REGISTRANTS\nDROP POLICY IF EXISTS "Allow public read access to Registrants data" ON public.ansor_bogor_registrants;\nCREATE POLICY "Allow public read access to Registrants data" ON public.ansor_bogor_registrants FOR SELECT USING (true);\n\nDROP POLICY IF EXISTS "Allow public insert access to Registrants data" ON public.ansor_bogor_registrants;\nCREATE POLICY "Allow public insert access to Registrants data" ON public.ansor_bogor_registrants FOR INSERT WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public update access to Registrants data" ON public.ansor_bogor_registrants;\nCREATE POLICY "Allow public update access to Registrants data" ON public.ansor_bogor_registrants FOR UPDATE USING (true) WITH CHECK (true);\n\nDROP POLICY IF EXISTS "Allow public delete access to Registrants data" ON public.ansor_bogor_registrants;\nCREATE POLICY "Allow public delete access to Registrants data" ON public.ansor_bogor_registrants FOR DELETE USING (true);`;
                           navigator.clipboard.writeText(sqlCode);
                           setCopiedSql(true);
-                          triggerToast("Script SQL berhasil disalin ke clipboard!");
+                          triggerToast("Script SQL lengkap berhasil disalin ke clipboard!");
                           setTimeout(() => setCopiedSql(false), 3000);
                         }}
                         className="px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-350 hover:text-white rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 font-bold"
@@ -1948,7 +1948,49 @@ INSERT INTO public.ansor_bogor_users (username, password, name, role)
 VALUES 
     ('admin', 'adminansor1934', 'Septa Aji', 'superadmin'),
     ('sekretariat', 'sekretariat1934', 'Sekretariat Cabang', 'sekretariat')
-ON CONFLICT (username) DO NOTHING;`}
+ON CONFLICT (username) DO NOTHING;
+
+
+-- 4. BUAT TABEL REKAP PENDAFTARAN KADERISASI DAN CALON ANGGOTA
+CREATE TABLE IF NOT EXISTS public.ansor_bogor_registrants (
+    id text PRIMARY KEY,
+    registration_type text NOT NULL DEFAULT 'member', -- 'member' atau 'kaderisasi'
+    name text NOT NULL,
+    nik varchar(16) NOT NULL,
+    email text NOT NULL,
+    whatsapp text NOT NULL,
+    district text NOT NULL,
+    reason text,
+    status text NOT NULL DEFAULT 'pending',
+    created_at timestamp with time zone DEFAULT now(),
+    desa text,
+    kabupaten text DEFAULT 'Kabupaten Bogor',
+    tempat_lahir text,
+    tanggal_lahir text,
+    ukuran_kaos varchar(10),
+    pendidikan_akhir text,
+    pendidikan_pesantren text,
+    pekerjaan text,
+    golongan_darah varchar(5),
+    status_pernikahan text,
+    pamflet_file text
+);
+
+-- AKTIFKAN ATURAN KEAMANAN ROW LEVEL SECURITY (RLS) FOR REGISTRANTS
+ALTER TABLE public.ansor_bogor_registrants ENABLE ROW LEVEL SECURITY;
+
+-- BUAT POLICIES BAGI TABEL REGISTRANTS
+DROP POLICY IF EXISTS "Allow public read access to Registrants data" ON public.ansor_bogor_registrants;
+CREATE POLICY "Allow public read access to Registrants data" ON public.ansor_bogor_registrants FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public insert access to Registrants data" ON public.ansor_bogor_registrants;
+CREATE POLICY "Allow public insert access to Registrants data" ON public.ansor_bogor_registrants FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public update access to Registrants data" ON public.ansor_bogor_registrants;
+CREATE POLICY "Allow public update access to Registrants data" ON public.ansor_bogor_registrants FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public delete access to Registrants data" ON public.ansor_bogor_registrants;
+CREATE POLICY "Allow public delete access to Registrants data" ON public.ansor_bogor_registrants FOR DELETE USING (true);`}
                     </pre>
                   </div>
                   
